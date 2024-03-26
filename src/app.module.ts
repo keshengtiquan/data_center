@@ -12,6 +12,9 @@ import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './common/filter/http-exception.filter';
 import { MenuModule } from './sys/menu/menu.module';
 import { CompanyDeptModule } from './sys/company-dept/company-dept.module';
+import { DictModule } from './sys/dict/dict.module';
+import { RedisModule } from './redis/redis.module';
+import { GenerateModule } from './generate/generate.module';
 
 @Module({
   imports: [
@@ -20,7 +23,7 @@ import { CompanyDeptModule } from './sys/company-dept/company-dept.module';
       middleware: {
         mount: true,
         setup: (cls, req) => {
-          cls.set('userInfo', req);
+          cls.set('headers', req);
         },
       },
     }),
@@ -47,6 +50,9 @@ import { CompanyDeptModule } from './sys/company-dept/company-dept.module';
     TenantPackageModule,
     MenuModule,
     CompanyDeptModule,
+    DictModule,
+    RedisModule,
+    GenerateModule,
   ],
   controllers: [],
   providers: [

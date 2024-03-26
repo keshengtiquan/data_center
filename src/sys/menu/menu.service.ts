@@ -21,7 +21,7 @@ export class MenuService {
    * @returns
    */
   async create(createMenuDto: CreateMenuDto) {
-    const userInfo = this.cls.get('userInfo').user as User;
+    const userInfo = this.cls.get('headers').user as User;
     try {
       const res = await this.prisma.menu.create({
         data: {
@@ -46,8 +46,8 @@ export class MenuService {
    * 获取菜单数据
    */
   async getMenu(menuType: string[], status: string[], module: string) {
-    const userInfo = this.cls.get('userInfo').user as any;
-    const headers = this.cls.get('userInfo');
+    const userInfo = this.cls.get('headers').user as any;
+    const headers = this.cls.get('headers');
 
     const condition: Record<string, any> = {
       menuType: { in: menuType },

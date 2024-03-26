@@ -4,7 +4,7 @@ import { IsNotEmpty, IsOptional, Length } from 'class-validator';
 export class SaveTenantInfoDto {
   @IsNotEmpty({ message: '项目ID不能为空' })
   @Type(() => Number)
-  tenantId: number;
+  id: number;
 
   @Length(1, 100, { message: '项目名称长度为1-100' })
   projectName: string;
@@ -66,4 +66,26 @@ export class SaveTenantInfoDto {
 
   @IsOptional()
   projectNature: string[];
+
+  @IsOptional()
+  contactUserName: string;
+
+  @IsOptional()
+  contactPhone: string;
+
+  @IsOptional()
+  projectLocation: string;
+
+  @IsOptional()
+  area: string;
+
+  @IsOptional()
+  areaLeader: number;
+  @IsOptional()
+  projectType: string;
+  @IsOptional()
+  projectProfessional: string;
+
+  @IsOptional()
+  companyName: string;
 }

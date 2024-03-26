@@ -6,7 +6,6 @@ import { IsInt, IsNotEmpty, IsOptional } from 'class-validator';
 export class CreateRoleDto {
   @ApiProperty({ description: '角色名称' })
   @IsNotEmpty({ message: '角色名称不能为空' })
-  // @RoleNotExistsRule({ message: '角色名称已存在' })
   roleName: string;
 
   @ApiProperty({ description: '角色标识' })

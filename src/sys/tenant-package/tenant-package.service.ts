@@ -19,7 +19,7 @@ export class TenantPackageService {
    * @returns
    */
   async create(createTenantPackageDto: CreateTenantPackageDto) {
-    const userInfo = this.cls.get('userInfo').user as User;
+    const userInfo = this.cls.get('headers').user as User;
 
     try {
       return this.prisma.tenantPackage.create({
@@ -76,7 +76,7 @@ export class TenantPackageService {
    * @param updatePackageDto
    */
   async update(updatePackageDto: UpdateTenantPackageDto) {
-    const userInfo = this.cls.get('userInfo').user as User;
+    const userInfo = this.cls.get('headers').user as User;
     try {
       return await this.prisma.tenantPackage.update({
         where: { id: updatePackageDto.id },

@@ -31,6 +31,7 @@ import { AddTenantUserDto } from './dto/add-tenant-user.dto';
 import { DeleteTenantUserDto } from './dto/delete-tenant-user.dto';
 import { UtcToLocalInterceptor } from 'src/common/interceptor/utc2Local.interceptor';
 import { UserNameToIdPipe } from 'src/common/pipe/userNameToIdPipe';
+import { DictTransform } from 'src/common/decorators/dict.dectorator';
 
 @ApiTags('项目管理')
 @Controller('tenant')
@@ -56,6 +57,11 @@ export class TenantController {
   @ApiQuery({ name: 'status', description: '状态', required: false })
   @ApiQuery({ name: 'contactUserName', description: '联系人', required: false })
   @UseInterceptors(UtcToLocalInterceptor)
+  @DictTransform([
+    { dictType: 'ProjectType', field: 'projectType' },
+    { dictType: 'ProjectProfessional', field: 'projectProfessional' },
+    { dictType: 'Area', field: 'area' },
+  ])
   @Get('/getlist')
   @Auth()
   async getList(@Query() findTenantListDto: FindTenantListDto) {
@@ -118,7 +124,6 @@ export class TenantController {
     new UserNameToIdPipe(['manager', 'chiefEngineer', 'safetyDirector']),
   )
   async saveTenantInfo(@Body() saveTenantInfoDto: SaveTenantInfoDto) {
-    console.log(saveTenantInfoDto);
     const data = await this.tenantService.saveTenantInfo(saveTenantInfoDto);
     return Result.success(data, '保存项目信息成功');
   }
@@ -130,10 +135,8 @@ export class TenantController {
   @Auth()
   async getTenantInfo(
     @Query('tenantId') tenantId: number,
-    @Headers('X-Tenant-Id') headerId,
+    @Headers('x-tenant-id') headerId,
   ) {
-    console.log(tenantId, headerId);
-
     const data = await this.tenantService.getTenantInfo(tenantId || +headerId);
     return Result.success(data, '获取项目信息成功');
   }
@@ -146,7 +149,7 @@ export class TenantController {
   @Auth()
   async getTenantUser(
     @Query() findTenantUserDto: FindTenantUserDto,
-    @Headers('X-Tenant-Id') headerId,
+    @Headers('x-tenant-id') headerId,
   ) {
     if (headerId) {
       findTenantUserDto.tenantId = +headerId;

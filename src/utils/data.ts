@@ -15,3 +15,20 @@ export function formatDate(date: Date, format: string) {
 
   return format;
 }
+
+export function sqlToTs(type: string) {
+  const sqlTsContrast = {
+    bigint: 'number',
+    int: 'number',
+    double: 'number',
+    float: 'number',
+    char: 'string',
+    varchar: 'string',
+    text: 'string',
+    datetime: 'string',
+    bool: 'boolean',
+    boolean: 'boolean',
+    time: 'string',
+  };
+  return sqlTsContrast[type];
+}

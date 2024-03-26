@@ -26,7 +26,8 @@ export class UserService {
    * @returns
    */
   async create(createUserDto: CreateUserDto) {
-    const userInfo = this.cls.get('userInfo').user as User;
+    const userInfo = this.cls.get('headers').user as User;
+    const headers = this.cls.get('headers').headers;
     try {
       const user = await this.prisma.user.create({
         data: {
@@ -38,12 +39,26 @@ export class UserService {
           gender: createUserDto.gender,
           companyDeptId: createUserDto.companyDeptId,
           remark: createUserDto.remark,
-          createBy: userInfo.userName,
-          updateBy: userInfo.userName,
+          createBy: (userInfo && userInfo.userName) || '',
+          updateBy: (userInfo && userInfo.userName) || '',
+          defaultProjectId: createUserDto.defaultProjectId,
+          ...(headers['x-tenant-id'] && {
+            tenants: {
+              create: {
+                tenant: {
+                  connect: {
+                    id: +headers['x-tenant-id'],
+                  },
+                },
+              },
+            },
+          }),
         },
       });
       return excludeFun(user, ['password']);
     } catch (error) {
+      console.log(error);
+
       throw new BadRequestException('用户创建失败');
     }
   }
@@ -115,7 +130,7 @@ export class UserService {
    * @param
    */
   async forbidden({ id, status }: ForbiddenUserDto) {
-    const userInfo = this.cls.get('userInfo').user as User;
+    const userInfo = this.cls.get('headers').user as User;
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (user.id === userInfo.id) {
       throw new BadRequestException('不能禁用自己');
@@ -153,7 +168,7 @@ export class UserService {
    * @param updateUserDto
    */
   async update(updateUserDto: UpdateUserDto) {
-    const userInfo = this.cls.get('userInfo').user as User;
+    const userInfo = this.cls.get('headers').user as User;
     const { id } = updateUserDto;
     try {
       const user = await this.prisma.user.update({

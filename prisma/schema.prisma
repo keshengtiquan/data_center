@@ -9,6 +9,7 @@ generator docs {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+  // relationMode = "prisma"
 }
 
 // 用户表
@@ -75,52 +76,49 @@ model UsersOnRoles {
 
 // 租户(项目)
 model Tenant {
-  id              Int              @id @default(autoincrement())
-  contactUserName String           @map("contact_user_name") @db.VarChar(20) //'联系人',
-  contactPhone    String           @map("contact_phone") @db.VarChar(20) //'联系电话',
-  companyName     String           @map("company_name") @db.VarChar(50) //'项目名称',
-  status          String           @default("0") @db.Char(1)
-  createBy        String?          @map("create_by") @db.VarChar(255)
-  updateBy        String?          @map("update_by") @db.VarChar(255)
-  createTime      DateTime         @default(now()) @map("create_time")
-  updateTime      DateTime         @updatedAt @map("update_time")
-  deleteflag      Int              @default(0) @map("delete_flag")
-  packageId       Int              @map("package_id")
-  tenantPackage   TenantPackage    @relation(fields: [packageId], references: [id])
-  users           TenantsOnUsers[]
-  TenantInfo      TenantInfo?
+  id                      Int              @id @default(autoincrement())
+  contactUserName         String           @map("contact_user_name") @db.VarChar(20) //'联系人',
+  contactPhone            String           @map("contact_phone") @db.VarChar(20) //'联系电话',
+  companyName             String           @map("company_name") @db.VarChar(50) //'项目名称',
+  status                  String           @default("0") @db.Char(1)
+  createBy                String?          @map("create_by") @db.VarChar(255)
+  updateBy                String?          @map("update_by") @db.VarChar(255)
+  createTime              DateTime         @default(now()) @map("create_time")
+  updateTime              DateTime         @updatedAt @map("update_time")
+  deleteflag              Int              @default(0) @map("delete_flag")
+  packageId               Int              @map("package_id") //项目套餐
+  tenantPackage           TenantPackage    @relation(fields: [packageId], references: [id]) //外键
+  users                   TenantsOnUsers[] //外键 
+  projectName             String?          @map("project_name") @db.VarChar(100) //项目名称
+  projectAddress          String?          @map("project_address") @db.VarChar(100) //项目地址
+  manager                 Int? //项目经理
+  chiefEngineer           Int?             @map("chief_engineer") //项目总工
+  safetyDirector          Int?             @map("safety_director") // 项目安全总监
+  startDate               String?          @map("start_date") //开工日期
+  endDate                 String?          @map("end_date") //竣工日期
+  projectNature           String?          @map("project_nature") //项目性质
+  area                    String?          @db.VarChar(20) //所属区域
+  developmentOrganization String?          @map("development_organization") @db.VarChar(100) //建设单位
+  developContact          String?          @map("develop_contact") //建设单位联系人
+  developAddress          String?          @map("develop_address") //建设单位地址
+  developTel              String?          @map("develop_tel") //建设单位电话
+  designOrganization      String?          @map("design_organization") @db.VarChar(100) //设计单位
+  designContact           String?          @map("design_contact") //设计单位联系人
+  designAddress           String?          @map("design_address") //设计单位地址
+  designTel               String?          @map("design_tel") //设计单位电话
+  supervisorOrganization  String?          @map("supervisor_organization") @db.VarChar(100) //监理单位
+  supervisorContact       String?          @map("supervisor_contact") //监理单位联系人
+  supervisorAddress       String?          @map("supervisor_address") //监理单位地址
+  supervisorTel           String?          @map("supervisor_tel") //监理单位电话
+  companyDeptId           Int              @default(6) @map("company_dept_id") //所属机构
+  companyDept             CompanyDept      @relation(fields: [companyDeptId], references: [id]) //外键
+  projectLocation         String?          @map("project_location") //项目地点
+  areaLeader              Int?             @map("area_leader") // 区域领导人
+  projectType             String?          @map("project_type") // 项目类型
+  projectProfessional     String?          @map("project_professional") // 项目专业
+  contract                String?          @map("contract") //合同文件
 
   @@map("sys_tenant")
-}
-
-model TenantInfo {
-  id                      Int         @id @default(autoincrement())
-  tenantId                Int         @unique @map("tenant_id")
-  tenant                  Tenant      @relation(fields: [tenantId], references: [id])
-  projectName             String?     @map("project_name") @db.VarChar(100)
-  projectAddress          String?     @map("project_address") @db.VarChar(100)
-  manager                 Int? //项目经理
-  chiefEngineer           Int?        @map("chief_engineer") //项目总工
-  safetyDirector          Int?        @map("safety_director") // 项目安全总监
-  startDate               String?     @map("start_date")
-  endDate                 String?     @map("end_date")
-  projectNature           String?     @map("project_nature") //项目性质
-  developmentOrganization String?     @map("development_organization") @db.VarChar(100) //建设单位
-  developContact          String?     @map("develop_contact")
-  developAddress          String?     @map("develop_address")
-  developTel              String?     @map("develop_tel")
-  designOrganization      String?     @map("design_organization") @db.VarChar(100) //设计单位
-  designContact           String?     @map("design_contact")
-  designAddress           String?     @map("design_address")
-  designTel               String?     @map("design_tel")
-  supervisorOrganization  String?     @map("supervisor_organization") @db.VarChar(100) //监理单位
-  supervisorContact       String?     @map("supervisor_contact")
-  supervisorAddress       String?     @map("supervisor_address")
-  supervisorTel           String?     @map("supervisor_tel")
-  companyDeptId           Int         @map("company_dept_id")
-  companyDept             CompanyDept @relation(fields: [companyDeptId], references: [id])
-
-  @@map("sys_tenant_info")
 }
 
 // 用户项目关联表
@@ -195,19 +193,87 @@ model MenusOnRoles {
 }
 
 model CompanyDept {
-  id         Int          @id @default(autoincrement())
-  parentId   Int          @default(0) @map("parent_id")
-  deptName   String       @map("dept_name") @db.VarChar(30)
-  deptType   String?      @default("0") @map("dept_type") @db.Char(50)
-  sortNumber Int?         @default(10) @map("sort_number")
-  createBy   String?      @map("create_by") @db.VarChar(255)
-  updateBy   String?      @map("update_by") @db.VarChar(255)
-  createTime DateTime     @default(now()) @map("create_time")
-  updateTime DateTime     @updatedAt @map("update_time")
-  deleteflag Int          @default(0) @map("delete_flag")
+  id         Int      @id @default(autoincrement())
+  parentId   Int      @default(0) @map("parent_id")
+  deptName   String   @map("dept_name") @db.VarChar(30)
+  deptType   String?  @default("0") @map("dept_type") @db.Char(50)
+  sortNumber Int?     @default(10) @map("sort_number")
+  createBy   String?  @map("create_by") @db.VarChar(255)
+  updateBy   String?  @map("update_by") @db.VarChar(255)
+  createTime DateTime @default(now()) @map("create_time")
+  updateTime DateTime @updatedAt @map("update_time")
+  deleteflag Int      @default(0) @map("delete_flag")
   leaderId   Int?
   Users      User[]
-  TenantInfo TenantInfo[]
+  Tenant     Tenant[]
 
   @@map("sys_comoany_dept")
+}
+
+model Dict {
+  id         Int      @id @default(autoincrement())
+  parentId   Int      @default(0) @map("parent_id")
+  dictLabel  String   @map("dict_label") @db.VarChar(100)
+  dictValue  String   @map("dict_value") @db.VarChar(100)
+  sortNumber Int?     @default(10) @map("sort_number")
+  createBy   String?  @map("create_by") @db.VarChar(255)
+  updateBy   String?  @map("update_by") @db.VarChar(255)
+  createTime DateTime @default(now()) @map("create_time")
+  updateTime DateTime @updatedAt @map("update_time")
+  deleteflag Int      @default(0) @map("delete_flag")
+
+  @@map("sys_dict")
+}
+
+model GenBasic {
+  id           Int         @id @default(autoincrement())
+  dbTable      String      @map("db_table") @db.VarChar(255) //表名
+  dbTableKey   String      @map("db_table_key") @db.VarChar(255) //表主键
+  pluginName   String?     @map("plugin_name") @db.VarChar(255) //插件名
+  moduleName   String?     @map("module_name") @db.VarChar(255) //模块名
+  generateType String?     @map("generate_type") @db.VarChar(255) //生成方式
+  module       String?     @db.VarChar(255) //模块
+  menuPId      Int?        @map("menu_pid") //上级目录
+  busName      String?     @map("bus_name") @db.VarChar(255) //业务名
+  className    String?     @map("class_name") @db.VarChar(255) //类名
+  formLayout   String?     @map("form_layout") @db.VarChar(255) //表单布局
+  authorName   String?     @map("author_name") @db.VarChar(255) //作者名
+  gridWhether  String?     @map("grid_whether") @db.VarChar(255) //是否使用栅格
+  sortNumber   Int?        @default(10) @map("sort_number")
+  createBy     String?     @map("create_by") @db.VarChar(255)
+  updateBy     String?     @map("update_by") @db.VarChar(255)
+  createTime   DateTime    @default(now()) @map("create_time")
+  updateTime   DateTime    @updatedAt @map("update_time")
+  deleteflag   Int         @default(0) @map("delete_flag")
+  GenConfig    GenConfig[]
+
+  @@map("gen_basic")
+}
+
+model GenConfig {
+  id          Int      @id @default(autoincrement())
+  basicId     Int
+  GenBasic    GenBasic @relation(fields: [basicId], references: [id])
+  isTableKey  Boolean? @map("is_table_key")
+  fieldName   String?  @map("field_name") @db.VarChar(255) //字段名称
+  fieldRemark String?  @map("field_remark") @db.VarChar(255) //字段备注
+  fieldType   String?  @map("field_type") @db.VarChar(255) //字段类型
+  fieldTsType String?  @map("field_Ts_type") @db.VarChar(255) //字段js类型
+  effectType  String?  @map("effect_type") @db.VarChar(255) //作用类型
+  dictTypeCo  String?  @map("dict_type_co") @db.VarChar(255) //字典类型
+  whetherTable Boolean? @map("whether_table") //是否生成表
+  whetherRet   Boolean? @map("whether_ret") //是否列显示
+  whetherAdd   Boolean? @map("whether_add") //是否生成添加
+  whetherEdit  Boolean? @map("whether_edit") //是否生成修改
+  whetherReq   Boolean? @map("whether_req")  //是否必填
+  queryWheth  Boolean? @map("query_wheth") //查询条件
+  queryType   String?  @map("query_type") @db.VarChar(255) //查询方式
+  sortNumber  Int?     @default(10) @map("sort_number")
+  createBy    String?  @map("create_by") @db.VarChar(255)
+  updateBy    String?  @map("update_by") @db.VarChar(255)
+  createTime  DateTime @default(now()) @map("create_time")
+  updateTime  DateTime @updatedAt @map("update_time")
+  deleteflag  Int      @default(0) @map("delete_flag")
+
+  @@map("gen_config")
 }

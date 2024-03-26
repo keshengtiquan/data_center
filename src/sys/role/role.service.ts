@@ -19,7 +19,7 @@ export class RoleService {
   private readonly cls: ClsService;
 
   async create(createRoleDto: CreateRoleDto) {
-    const userInfo = this.cls.get('userInfo').user as User;
+    const userInfo = this.cls.get('headers').user as User;
     const findRoleName = await this.prisma.role.findFirst({
       where: {
         roleName: createRoleDto.roleName,
@@ -62,10 +62,11 @@ export class RoleService {
    * @returns
    */
   async getList(findRoleListDto: FindRoleListDto) {
-    const userInfo = this.cls.get('userInfo').user as User;
+    const headers = this.cls.get('headers').headers as Headers;
 
     const { current, pageSize } = findRoleListDto;
     const condition = {
+      tenantId: +headers['x-tenant-id'],
       deleteflag: 0,
     };
     const list = await this.prisma.role.findMany({

@@ -34,9 +34,11 @@ export class UserController {
   @ApiOperation({ summary: '创建用户' })
   @ApiBody({ type: CreateUserDto })
   @Post('/create')
-  @Auth()
+  // @Auth()
   @HttpCode(HttpStatus.OK)
   async create(@Body() createUserDto: CreateUserDto) {
+    console.log(createUserDto);
+
     return Result.success(
       await this.userService.create(createUserDto),
       '用户创建成功',

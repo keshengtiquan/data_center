@@ -18,6 +18,7 @@ import { FindTenantUserDto } from './dto/find-tenant-usr.dto';
 import { AddTenantUserDto } from './dto/add-tenant-user.dto';
 import { DeleteTenantUserDto } from './dto/delete-tenant-user.dto';
 import { excludeFun } from 'src/utils/prisma';
+import { ListVo } from 'src/common/vo/list.vo';
 
 @Injectable()
 export class TenantService {
@@ -32,7 +33,7 @@ export class TenantService {
    * @returns
    */
   async create(createTenantDto: CreateTenantDto) {
-    const userInfo = this.cls.get('userInfo').user as User;
+    const userInfo = this.cls.get('headers').user as User;
     const user = await this.prisma.user.findFirst({
       where: {
         userName: createTenantDto.userName,
@@ -100,7 +101,7 @@ export class TenantService {
    * @param findTenantListDto
    */
   async getList(findTenantListDto: FindTenantListDto) {
-    const userInfo = this.cls.get('userInfo').user;
+    const userInfo = this.cls.get('headers').user;
     const { current, pageSize, companyName, contactUserName, status } =
       findTenantListDto;
 
@@ -119,16 +120,53 @@ export class TenantService {
 
     const list = await this.prisma.tenant.findMany({
       where: condition,
-      include: { tenantPackage: true, TenantInfo: true },
+      include: { tenantPackage: true, companyDept: true },
       skip: (current - 1) * pageSize,
       take: pageSize,
     });
-    return {
-      results: list,
-      pageSize,
-      current,
-      total: await this.prisma.tenant.count({ where: condition }),
-    };
+
+    const tenantListVo = new ListVo();
+
+    // 转换
+    const userIdsSet = new Set<number>();
+    list.forEach((item) => {
+      if (item.manager) userIdsSet.add(item.manager);
+      if (item.chiefEngineer) userIdsSet.add(item.chiefEngineer);
+      if (item.safetyDirector) userIdsSet.add(item.safetyDirector);
+      if (item.areaLeader) userIdsSet.add(item.areaLeader);
+    });
+    const userIds = Array.from(userIdsSet);
+    const users = await this.prisma.user.findMany({
+      where: {
+        id: { in: userIds },
+      },
+    });
+
+    tenantListVo.results = list.map((item) => {
+      const { manager, chiefEngineer, areaLeader, safetyDirector, ...other } =
+        item;
+      const obj = {
+        manager: manager
+          ? users.find((user) => user.id === manager).nickName
+          : null,
+        chiefEngineer: chiefEngineer
+          ? users.find((user) => user.id === chiefEngineer).nickName
+          : null,
+        safetyDirector: safetyDirector
+          ? users.find((user) => user.id === safetyDirector).nickName
+          : null,
+        areaLeader: areaLeader
+          ? users.find((user) => user.id === areaLeader).nickName
+          : null,
+        ...other,
+      };
+      return obj;
+    });
+    tenantListVo.total = await this.prisma.tenant.count({ where: condition });
+    tenantListVo.current = current;
+    tenantListVo.pageSize = pageSize;
+
+    return tenantListVo;
   }
 
   /**
@@ -136,7 +174,7 @@ export class TenantService {
    * @param forbiddenTenantDto
    */
   async forbidden(forbiddenTenantDto: ForbiddenTenantDto) {
-    const userInfo = this.cls.get('userInfo').user as User;
+    const userInfo = this.cls.get('headers').user as User;
     try {
       return await this.prisma.tenant.update({
         where: { id: forbiddenTenantDto.id },
@@ -165,7 +203,7 @@ export class TenantService {
    * @param updateTenantDto
    */
   async updateTenant(updateTenantDto: UpdateTenantDto) {
-    const userInfo = this.cls.get('userInfo').user as User;
+    const userInfo = this.cls.get('headers').user as User;
     try {
       return await this.prisma.tenant.update({
         where: { id: updateTenantDto.id },
@@ -203,83 +241,60 @@ export class TenantService {
    * @param saveTenantInfoDto
    */
   async saveTenantInfo(saveTenantInfoDto: SaveTenantInfoDto) {
-    const info = await this.prisma.tenantInfo.findFirst({
-      where: { tenantId: saveTenantInfoDto.tenantId },
+    const tenantInfo = await this.prisma.tenant.update({
+      where: { id: saveTenantInfoDto.id },
+      data: {
+        companyName: saveTenantInfoDto.companyName,
+        projectName: saveTenantInfoDto.projectName,
+        projectAddress: saveTenantInfoDto.projectAddress,
+        manager: saveTenantInfoDto.manager,
+        chiefEngineer: saveTenantInfoDto.chiefEngineer,
+        developmentOrganization: saveTenantInfoDto.developmentOrganization,
+        designOrganization: saveTenantInfoDto.designOrganization,
+        supervisorOrganization: saveTenantInfoDto.supervisorOrganization,
+        safetyDirector: saveTenantInfoDto.safetyDirector,
+        developContact: saveTenantInfoDto.developContact,
+        developAddress: saveTenantInfoDto.developAddress,
+        developTel: saveTenantInfoDto.developTel,
+        designContact: saveTenantInfoDto.designContact,
+        designAddress: saveTenantInfoDto.designAddress,
+        designTel: saveTenantInfoDto.designTel,
+        supervisorContact: saveTenantInfoDto.supervisorContact,
+        supervisorAddress: saveTenantInfoDto.supervisorAddress,
+        supervisorTel: saveTenantInfoDto.supervisorTel,
+        companyDeptId: saveTenantInfoDto.companyDeptId,
+        startDate: saveTenantInfoDto.startDate,
+        endDate: saveTenantInfoDto.endDate,
+        projectNature: JSON.stringify(saveTenantInfoDto.projectNature),
+        contactUserName: saveTenantInfoDto.contactUserName,
+        contactPhone: saveTenantInfoDto.contactPhone,
+        projectLocation: saveTenantInfoDto.projectLocation,
+        area: saveTenantInfoDto.area,
+        areaLeader: saveTenantInfoDto.areaLeader,
+        projectType: saveTenantInfoDto.projectType,
+        projectProfessional: saveTenantInfoDto.projectProfessional,
+      },
     });
-    if (info) {
-      await this.prisma.tenantInfo.update({
-        where: { id: info.id },
-        data: {
-          projectName: saveTenantInfoDto.projectName,
-          projectAddress: saveTenantInfoDto.projectAddress,
-          manager: saveTenantInfoDto.manager,
-          chiefEngineer: saveTenantInfoDto.chiefEngineer,
-          developmentOrganization: saveTenantInfoDto.developmentOrganization,
-          designOrganization: saveTenantInfoDto.designOrganization,
-          supervisorOrganization: saveTenantInfoDto.supervisorOrganization,
-          safetyDirector: saveTenantInfoDto.safetyDirector,
-          developContact: saveTenantInfoDto.developContact,
-          developAddress: saveTenantInfoDto.developAddress,
-          developTel: saveTenantInfoDto.developTel,
-          designContact: saveTenantInfoDto.designContact,
-          designAddress: saveTenantInfoDto.designAddress,
-          designTel: saveTenantInfoDto.designTel,
-          supervisorContact: saveTenantInfoDto.supervisorContact,
-          supervisorAddress: saveTenantInfoDto.supervisorAddress,
-          supervisorTel: saveTenantInfoDto.supervisorTel,
-          companyDeptId: saveTenantInfoDto.companyDeptId,
-          startDate: saveTenantInfoDto.startDate,
-          endDate: saveTenantInfoDto.endDate,
-          projectNature: JSON.stringify(saveTenantInfoDto.projectNature),
-        },
-      });
-    } else {
-      await this.prisma.tenantInfo.create({
-        data: {
-          tenantId: saveTenantInfoDto.tenantId,
-          projectName: saveTenantInfoDto.projectName,
-          projectAddress: saveTenantInfoDto.projectAddress,
-          manager: saveTenantInfoDto.manager,
-          chiefEngineer: saveTenantInfoDto.chiefEngineer,
-          developmentOrganization: saveTenantInfoDto.developmentOrganization,
-          designOrganization: saveTenantInfoDto.designOrganization,
-          supervisorOrganization: saveTenantInfoDto.supervisorOrganization,
-          safetyDirector: saveTenantInfoDto.safetyDirector,
-          developContact: saveTenantInfoDto.developContact,
-          developAddress: saveTenantInfoDto.developAddress,
-          developTel: saveTenantInfoDto.developTel,
-          designContact: saveTenantInfoDto.designContact,
-          designAddress: saveTenantInfoDto.designAddress,
-          designTel: saveTenantInfoDto.designTel,
-          supervisorContact: saveTenantInfoDto.supervisorContact,
-          supervisorAddress: saveTenantInfoDto.supervisorAddress,
-          supervisorTel: saveTenantInfoDto.supervisorTel,
-          companyDeptId: saveTenantInfoDto.companyDeptId,
-          startDate: saveTenantInfoDto.startDate,
-          endDate: saveTenantInfoDto.endDate,
-          projectNature: JSON.stringify(saveTenantInfoDto.projectNature),
-        },
-      });
-    }
 
+    // 给当前项目的项目管理员添加所属机构
     const users = await this.prisma.tenantsOnUsers.findMany({
-      where: { tenantId: saveTenantInfoDto.tenantId },
+      where: { tenantId: saveTenantInfoDto.id },
       include: {
         user: true,
       },
     });
     const filterUser = users.filter(
       (item) =>
-        item.user.userType === USER_TYPE.SYSTEM_USER &&
+        item.user.userType === USER_TYPE.PROJECT_ADMIN &&
         !item.user.companyDeptId,
     );
     if (filterUser.length > 0) {
-      this.prisma.user.updateMany({
+      await this.prisma.user.updateMany({
         where: { id: { in: filterUser.map((item) => item.user.id) } },
         data: { companyDeptId: saveTenantInfoDto.companyDeptId },
       });
     }
-    return 'success';
+    return tenantInfo;
   }
 
   /**
@@ -287,16 +302,20 @@ export class TenantService {
    * @param tenantId
    */
   async getTenantInfo(tenantId: number) {
-    const data = await this.prisma.tenantInfo.findFirst({
-      where: { tenantId: tenantId },
-      include: { tenant: true },
+    if (!tenantId) {
+      throw new BadRequestException('没有选择项目,请退出后重新登录');
+    }
+    const data = await this.prisma.tenant.findFirst({
+      where: { id: tenantId },
     });
+
     if (data) {
       const personnel = [
         data.manager,
         data.chiefEngineer,
         data.safetyDirector,
       ].filter((id) => id);
+      if (personnel.length === 0) return data;
       const personelData = await this.prisma.user.findMany({
         where: {
           id: {
@@ -331,7 +350,9 @@ export class TenantService {
     const list = await this.prisma.tenantsOnUsers.findMany({
       where: { tenantId: tenantId, user: { deleteflag: 0 } },
       include: {
-        user: true,
+        user: {
+          include: { CompanyDept: true },
+        },
       },
       skip: (current - 1) * pageSize,
       take: pageSize,
