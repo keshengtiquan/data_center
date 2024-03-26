@@ -6,11 +6,19 @@ import { ForbiddenUserDto } from './dto/forbidden-user.dto';
 import { excludeFun } from 'src/utils/prisma';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from '@prisma/client';
+import { USER_TYPE } from 'src/common/enum';
+import { ClsService } from 'nestjs-cls';
+import { CompanyDeptService } from '../company-dept/company-dept.service';
+import { extractSubNodeList } from 'src/utils/tree';
 
 @Injectable()
 export class UserService {
   @Inject()
   private prisma: PrismaService;
+  @Inject(ClsService)
+  private readonly cls: ClsService;
+  @Inject(CompanyDeptService)
+  private readonly companyDeptService: CompanyDeptService;
 
   /**
    * 创建用户
@@ -18,11 +26,23 @@ export class UserService {
    * @returns
    */
   async create(createUserDto: CreateUserDto) {
+    const userInfo = this.cls.get('userInfo').user as User;
     try {
-      await this.prisma.user.create({
-        data: createUserDto,
+      const user = await this.prisma.user.create({
+        data: {
+          userName: createUserDto.userName,
+          password: createUserDto.password,
+          nickName: createUserDto.nickName,
+          email: createUserDto.email,
+          phoneNumber: createUserDto.phoneNumber,
+          gender: createUserDto.gender,
+          companyDeptId: createUserDto.companyDeptId,
+          remark: createUserDto.remark,
+          createBy: userInfo.userName,
+          updateBy: userInfo.userName,
+        },
       });
-      return '用户创建成功';
+      return excludeFun(user, ['password']);
     } catch (error) {
       throw new BadRequestException('用户创建失败');
     }
@@ -33,21 +53,57 @@ export class UserService {
    * @param getListDto
    */
   async getList(findListDto: FindListDto) {
-    const { pageSize, current, nickName, userName } = findListDto;
+    const {
+      pageSize,
+      current,
+      nickName,
+      userName,
+      tenantId,
+      companyDeptId,
+      status,
+    } = findListDto;
+    // 项目中已有的用户ID
+    let userIds = [];
+    if (tenantId) {
+      const data = await this.prisma.tenantsOnUsers.findMany({
+        where: { tenantId: tenantId },
+      });
+      userIds = data.map((item) => item.userId);
+    }
+    //根据组织机构ID查询本级及下级的用户
+    let companyDeptIds = [];
+    if (companyDeptId) {
+      const companyDept = await this.companyDeptService.getlist();
+      companyDeptIds = extractSubNodeList(companyDept, companyDeptId);
+    }
+
     const condition = {
       ...(nickName && { nickName: { contains: nickName } }),
       ...(userName && { userName: { contains: userName } }),
+      ...(userIds.length > 0 && { id: { notIn: userIds } }),
+      ...(companyDeptIds.length > 0 && {
+        companyDeptId: { in: companyDeptIds },
+      }),
+      ...(status && { status: status }),
       deleteflag: 0,
     };
+
     const list = await this.prisma.user.findMany({
       skip: (current - 1) * pageSize,
       take: pageSize,
       where: condition,
+      include: {
+        tenants: { include: { tenant: true } },
+        CompanyDept: true,
+      },
     });
+
     return {
-      results: list.map((item) => {
-        return excludeFun(item, ['password']);
-      }),
+      results: list
+        .filter((item) => item.userName !== 'superAdmin')
+        .map((item) => {
+          return excludeFun(item, ['password']);
+        }),
       total: await this.prisma.user.count({ where: condition }),
       current,
       pageSize,
@@ -59,8 +115,14 @@ export class UserService {
    * @param
    */
   async forbidden({ id, status }: ForbiddenUserDto) {
-    // const user = await this.prisma.user.findUnique({ where: { id } });
-    //TODO 不能禁用系统用户、无权禁用系统用户
+    const userInfo = this.cls.get('userInfo').user as User;
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (user.id === userInfo.id) {
+      throw new BadRequestException('不能禁用自己');
+    }
+    if (user.userType === USER_TYPE.SYSTEM_USER) {
+      throw new BadRequestException('不能禁用系统用户');
+    }
     try {
       await this.prisma.user.update({
         where: { id },
@@ -91,13 +153,22 @@ export class UserService {
    * @param updateUserDto
    */
   async update(updateUserDto: UpdateUserDto) {
-    console.log(updateUserDto);
-
-    const { id, ...other } = updateUserDto;
+    const userInfo = this.cls.get('userInfo').user as User;
+    const { id } = updateUserDto;
     try {
       const user = await this.prisma.user.update({
         where: { id },
-        data: { ...other },
+        data: {
+          userName: updateUserDto.userName,
+          nickName: updateUserDto.nickName,
+          email: updateUserDto.email,
+          phoneNumber: updateUserDto.phoneNumber,
+          gender: updateUserDto.gender,
+          avatar: updateUserDto.avatar,
+          remark: updateUserDto.remark,
+          updateBy: userInfo.userName,
+          companyDeptId: updateUserDto.companyDeptId,
+        },
       });
       return excludeFun(user, ['password']);
     } catch (error) {

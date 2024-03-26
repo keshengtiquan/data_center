@@ -1,48 +1,36 @@
+import { Type } from 'class-transformer';
 import { IsNotEmpty, IsOptional } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateUserDto {
-  @ApiProperty()
   @IsNotEmpty({ message: '用户id不能为空' })
   id: number;
 
-  @ApiPropertyOptional()
+  @IsOptional()
+  userName: string;
+
   @IsOptional()
   nickName: string;
 
-  @ApiPropertyOptional()
   @IsOptional()
   email: string;
 
-  @ApiPropertyOptional()
   @IsOptional()
   phoneNumber: string;
 
-  @ApiPropertyOptional()
   @IsOptional()
   gender: string;
 
-  @ApiPropertyOptional()
   @IsOptional()
   avatar: string;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  status: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  createDept: number;
-
-  @ApiPropertyOptional()
   @IsOptional()
   remark: string;
 
-  @ApiPropertyOptional()
+  @Type(() => Number)
   @IsOptional()
-  deptId: number;
+  companyDeptId: number;
 
-  @ApiPropertyOptional()
+  @Type(() => Number)
   @IsOptional()
-  roleIds: number[];
+  defaultProjectId: number;
 }

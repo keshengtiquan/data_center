@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Query, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Query,
+  Get,
+  HttpCode,
+  HttpStatus,
+  UseInterceptors,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Result } from 'src/common/result';
@@ -15,6 +24,7 @@ import { ForbiddenUserDto } from './dto/forbidden-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserInfo } from 'src/common/decorators/user.dectorator';
 import { User } from '@prisma/client';
+import { UtcToLocalInterceptor } from 'src/common/interceptor/utc2Local.interceptor';
 
 @ApiTags('用户管理')
 @Controller('user')
@@ -25,6 +35,7 @@ export class UserController {
   @ApiBody({ type: CreateUserDto })
   @Post('/create')
   @Auth()
+  @HttpCode(HttpStatus.OK)
   async create(@Body() createUserDto: CreateUserDto) {
     return Result.success(
       await this.userService.create(createUserDto),
@@ -62,6 +73,7 @@ export class UserController {
   })
   @Get('/getlist')
   @Auth()
+  @UseInterceptors(UtcToLocalInterceptor)
   async getlist(@Query() findListDto: FindListDto) {
     const data = await this.userService.getList(findListDto);
     return Result.success(data);
@@ -95,6 +107,7 @@ export class UserController {
   @ApiBody({ type: UpdateUserDto })
   @Post('/update')
   @Auth()
+  @HttpCode(HttpStatus.OK)
   async update(@Body() updateUserDto: UpdateUserDto) {
     const data = await this.userService.update(updateUserDto);
     return Result.success(data, '用户更新成功');
@@ -104,6 +117,7 @@ export class UserController {
   @ApiBody({ schema: { properties: { id: { type: 'number' } } } })
   @Post('/delete')
   @Auth()
+  @HttpCode(HttpStatus.OK)
   async delete(@Body('id') id: number, @UserInfo() userInfo: User) {
     const data = await this.userService.delete(id, userInfo);
     return Result.success(data, '删除用户成功');

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 import { IsNotExistsRule } from 'src/common/rules/is-not-exist.rule';
 import { md5 } from 'src/utils/md5';
@@ -40,21 +40,13 @@ export class CreateUserDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  status: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  createDept: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
   remark: string;
 
-  @ApiPropertyOptional()
+  @Type(() => Number)
   @IsOptional()
-  deptId: number;
+  companyDeptId: number;
 
-  @ApiPropertyOptional()
+  @Type(() => Number)
   @IsOptional()
-  roleIds: number[];
+  defaultProjectId: number;
 }

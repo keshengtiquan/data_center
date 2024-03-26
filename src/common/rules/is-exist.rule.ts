@@ -27,7 +27,7 @@ export function IsExistRule(
           const res = await prisma[table].findFirst({
             where: {
               [args.property]: value,
-              deleteflag: 1,
+              deleteflag: 0,
             },
           });
           return Boolean(res);

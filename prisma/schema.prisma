@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -17,25 +11,203 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 用户表
 model User {
-  id            Int      @id @default(autoincrement())
-  userType      String?  @map("user_type") @db.VarChar(64)
-  userName      String   @map("user_name") @db.VarChar(30)
-  nickName      String?  @map("nick_name") @db.VarChar(30)
-  email         String?  @db.VarChar(60)
-  phoneNumber   String?  @map("phone_number") @db.VarChar(11)
-  gender        String   @default("0") @db.Char(1)
-  avatar        String?  @db.VarChar(255)
-  password      String   @db.VarChar(100)
-  status        String   @default("0") @db.Char(1)
-  remark        String?  @db.VarChar(500)
-  tenantIds     String?  @map("tenant_ids") @db.VarChar(100)
-  currentTenant Int?     @map("current_tenant")
-  createBy      String?  @map("create_by") @db.VarChar(255)
-  updateBy      String?  @map("update_by") @db.VarChar(255)
-  createTime    DateTime @default(now()) @map("create_time")
-  updateTime    DateTime @updatedAt @map("update_time")
-  deleteflag    Int      @default(0) @map("delete_flag")
+  id               Int              @id @default(autoincrement())
+  userType         String?          @default("general_user") @map("user_type") @db.VarChar(64)
+  userName         String           @map("user_name") @db.VarChar(30)
+  nickName         String?          @map("nick_name") @db.VarChar(30)
+  email            String?          @db.VarChar(60)
+  phoneNumber      String?          @map("phone_number") @db.VarChar(11)
+  gender           String           @default("0") @db.Char(1)
+  avatar           String?          @db.VarChar(255)
+  password         String           @db.VarChar(100)
+  status           String           @default("0") @db.Char(1)
+  remark           String?          @db.VarChar(500)
+  createDept       Int?             @map("create_dept")
+  deptId           Int?             @map("dept_id")
+  createBy         String?          @map("create_by") @db.VarChar(255)
+  updateBy         String?          @map("update_by") @db.VarChar(255)
+  createTime       DateTime         @default(now()) @map("create_time")
+  updateTime       DateTime         @updatedAt @map("update_time")
+  deleteflag       Int              @default(0) @map("delete_flag")
+  defaultProjectId Int?             @map("default_project_id")
+  roles            UsersOnRoles[]
+  tenants          TenantsOnUsers[]
+  CompanyDept      CompanyDept?     @relation(fields: [companyDeptId], references: [id])
+  companyDeptId    Int?             @map("company_dept_id")
 
   @@map("sys_user")
+}
+
+// 角色表
+model Role {
+  id         Int            @id @default(autoincrement())
+  tenantId   Int            @default(0) @map("tenant_id")
+  roleName   String         @map("role_name_cn") @db.VarChar(30)
+  roleKey    String         @map("role_key") @db.VarChar(100)
+  roleSort   Int            @map("role_sort")
+  dataScope  String         @default("1") @map("data_scope") @db.Char(1)
+  status     String         @default("0") @db.Char(1)
+  remark     String?        @db.VarChar(500)
+  createDept Int?           @map("create_dept")
+  createBy   String?        @map("create_by") @db.VarChar(255)
+  updateBy   String?        @map("update_by") @db.VarChar(255)
+  createTime DateTime       @default(now()) @map("create_time")
+  updateTime DateTime       @updatedAt @map("update_time")
+  deleteflag Int            @default(0) @map("delete_flag")
+  users      UsersOnRoles[]
+  menus      MenusOnRoles[]
+
+  @@map("sys_role")
+}
+
+// 用户角色关联表
+model UsersOnRoles {
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @map("user_id")
+  role   Role @relation(fields: [roleId], references: [id])
+  roleId Int  @map("role_id")
+
+  @@id([userId, roleId])
+  @@map("sys_user_role")
+}
+
+// 租户(项目)
+model Tenant {
+  id              Int              @id @default(autoincrement())
+  contactUserName String           @map("contact_user_name") @db.VarChar(20) //'联系人',
+  contactPhone    String           @map("contact_phone") @db.VarChar(20) //'联系电话',
+  companyName     String           @map("company_name") @db.VarChar(50) //'项目名称',
+  status          String           @default("0") @db.Char(1)
+  createBy        String?          @map("create_by") @db.VarChar(255)
+  updateBy        String?          @map("update_by") @db.VarChar(255)
+  createTime      DateTime         @default(now()) @map("create_time")
+  updateTime      DateTime         @updatedAt @map("update_time")
+  deleteflag      Int              @default(0) @map("delete_flag")
+  packageId       Int              @map("package_id")
+  tenantPackage   TenantPackage    @relation(fields: [packageId], references: [id])
+  users           TenantsOnUsers[]
+  TenantInfo      TenantInfo?
+
+  @@map("sys_tenant")
+}
+
+model TenantInfo {
+  id                      Int         @id @default(autoincrement())
+  tenantId                Int         @unique @map("tenant_id")
+  tenant                  Tenant      @relation(fields: [tenantId], references: [id])
+  projectName             String?     @map("project_name") @db.VarChar(100)
+  projectAddress          String?     @map("project_address") @db.VarChar(100)
+  manager                 Int? //项目经理
+  chiefEngineer           Int?        @map("chief_engineer") //项目总工
+  safetyDirector          Int?        @map("safety_director") // 项目安全总监
+  startDate               String?     @map("start_date")
+  endDate                 String?     @map("end_date")
+  projectNature           String?     @map("project_nature") //项目性质
+  developmentOrganization String?     @map("development_organization") @db.VarChar(100) //建设单位
+  developContact          String?     @map("develop_contact")
+  developAddress          String?     @map("develop_address")
+  developTel              String?     @map("develop_tel")
+  designOrganization      String?     @map("design_organization") @db.VarChar(100) //设计单位
+  designContact           String?     @map("design_contact")
+  designAddress           String?     @map("design_address")
+  designTel               String?     @map("design_tel")
+  supervisorOrganization  String?     @map("supervisor_organization") @db.VarChar(100) //监理单位
+  supervisorContact       String?     @map("supervisor_contact")
+  supervisorAddress       String?     @map("supervisor_address")
+  supervisorTel           String?     @map("supervisor_tel")
+  companyDeptId           Int         @map("company_dept_id")
+  companyDept             CompanyDept @relation(fields: [companyDeptId], references: [id])
+
+  @@map("sys_tenant_info")
+}
+
+// 用户项目关联表
+model TenantsOnUsers {
+  user     User   @relation(fields: [userId], references: [id])
+  userId   Int    @map("user_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId Int    @map("tenant_id")
+
+  @@id([userId, tenantId])
+  @@map("sys_tenant_user")
+}
+
+// 租户套餐
+model TenantPackage {
+  id          Int      @id @default(autoincrement())
+  packageName String   @map("package_name") @db.VarChar(20)
+  remark      String?  @db.VarChar(1000)
+  menuIds     String   @map("menu_ids") @db.VarChar(3000)
+  status      String   @default("0") @db.Char(1)
+  createBy    String?  @map("create_by") @db.VarChar(255)
+  updateBy    String?  @map("update_by") @db.VarChar(255)
+  createTime  DateTime @default(now()) @map("create_time")
+  updateTime  DateTime @updatedAt @map("update_time")
+  deleteflag  Int      @default(0) @map("delete_flag")
+  Tenant      Tenant[]
+
+  @@map("sys_tenant_package")
+}
+
+model Menu {
+  id                 Int            @id @default(autoincrement())
+  title              String         @db.VarChar(50)
+  icon               String?        @db.VarChar(100)
+  path               String?        @db.VarChar(125)
+  component          String?        @db.VarChar(125)
+  name               String?        @db.VarChar(100)
+  hideInMenu         Boolean        @default(false) @map("hide_in_menu")
+  parentId           Int            @default(0) @map("parent_id")
+  isIframe           Boolean        @default(false) @map("is_iframe")
+  url                String?        @db.VarChar(500)
+  affix              Boolean        @default(false)
+  hideInBreadcrumb   Boolean        @default(false) @map("hide_in_breadcrumb")
+  hideChildrenInMenu Boolean        @default(false) @map("hide_children_in_menu")
+  keepAlive          Boolean        @default(false) @map("keep_alive")
+  target             String?        @default("_blank") @db.VarChar(20)
+  redirect           String?        @db.VarChar(125)
+  menuSort           Int            @map("menu_sort")
+  permission         String?        @db.VarChar(100)
+  status             String         @default("0") @db.Char(1)
+  menuType           String?        @db.Char(1)
+  createBy           String?        @map("create_by") @db.VarChar(255)
+  updateBy           String?        @map("update_by") @db.VarChar(255)
+  createTime         DateTime       @default(now()) @map("create_time")
+  updateTime         DateTime       @updatedAt @map("update_time")
+  deleteflag         Int            @default(0) @map("delete_flag")
+  activeMenu         String?        @map("active_menu") @db.VarChar(255)
+  module             String?        @map("module") @db.VarChar(255)
+  roles              MenusOnRoles[]
+
+  @@map("sys_menu")
+}
+
+model MenusOnRoles {
+  menus  Menu @relation(fields: [menuId], references: [id])
+  menuId Int  @map("menu_id")
+  roles  Role @relation(fields: [roleId], references: [id])
+  roleId Int  @map("role_id")
+
+  @@id([menuId, roleId])
+  @@map("sys_menu_role")
+}
+
+model CompanyDept {
+  id         Int          @id @default(autoincrement())
+  parentId   Int          @default(0) @map("parent_id")
+  deptName   String       @map("dept_name") @db.VarChar(30)
+  deptType   String?      @default("0") @map("dept_type") @db.Char(50)
+  sortNumber Int?         @default(10) @map("sort_number")
+  createBy   String?      @map("create_by") @db.VarChar(255)
+  updateBy   String?      @map("update_by") @db.VarChar(255)
+  createTime DateTime     @default(now()) @map("create_time")
+  updateTime DateTime     @updatedAt @map("update_time")
+  deleteflag Int          @default(0) @map("delete_flag")
+  leaderId   Int?
+  Users      User[]
+  TenantInfo TenantInfo[]
+
+  @@map("sys_comoany_dept")
 }

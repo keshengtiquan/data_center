@@ -9,8 +9,8 @@ export class PermissionGuard implements CanActivate {
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
     //当前登录的用户
-    const user = context.switchToHttp().getRequest().user;
-    console.log(user);
+    context.switchToHttp().getRequest().user;
+    // console.log(user);
     // console.log(this.reflector.get('permission', context.getHandler()));
     return true;
   }
