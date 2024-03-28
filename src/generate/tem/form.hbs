@@ -54,7 +54,7 @@ defineExpose({ formRef })
             {{/if}}
           {{/if}}
           {{#if (eq this.effectType 'inputNumber')}}
-          <a-input-number id="inputNumber" v-model:value="formState.{{this.fieldName}}" :min="1"  allow-clear />
+          <a-input-number id="inputNumber" style="width: 100%;" v-model:value="formState.{{this.fieldName}}" :min="1"  allow-clear />
           {{/if}}
         </a-form-item>
       </a-col>
@@ -89,7 +89,7 @@ defineExpose({ formRef })
         {{/if}}
       {{/if}}
       {{#if (eq this.effectType 'inputNumber')}}
-      <a-input-number id="inputNumber" v-model:value="formState.{{this.fieldName}}" :min="1"  allow-clear />
+      <a-input-number id="inputNumber" style="width: 100%;" v-model:value="formState.{{this.fieldName}}" :min="1"  allow-clear />
       {{/if}}
     </a-form-item>
     {{/each}}

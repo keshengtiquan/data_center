@@ -36,8 +36,8 @@ defineExpose({ showModal })
 </script>
 <template>
   <Modal v-model="open" title="修改{{busName}}" @ok="submit" @cancel="close">
-    <a-skeleton :loading="loading" />
-    <{{uppermoduleName}}Form v-model:modal-value="formState" ref="{{moduleName}}FormRef" />
+    <a-skeleton v-if="loading" :loading="loading" />
+    <{{uppermoduleName}}Form v-else v-model:modal-value="formState" ref="{{moduleName}}FormRef" />
   </Modal>
 </template>
 <style scoped></style>
