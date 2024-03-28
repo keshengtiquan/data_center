@@ -43,7 +43,7 @@ export class DictInterceptor implements NestInterceptor {
 
   private async processData(
     data: any[],
-    dictConvertField: { dictType: string; field: string }[],
+    dictConvertField: { dictType: string; field: string; isArray: boolean }[],
   ) {
     const dictList = await this.prisma.dict.findMany();
     const dictTree = handleTree(dictList);
@@ -56,9 +56,34 @@ export class DictInterceptor implements NestInterceptor {
           const dict = dictTree.find(
             (dict) => dict.dictValue === item.dictType,
           );
-          node[item.field] = dict.children.find(
-            (child) => child.dictValue === node[item.field],
-          ).dictLabel;
+          console.log(typeof node[item.field]);
+          //字典下拉为多选时是个数组， 要在service里提前转数组
+          if (item.isArray) {
+            let arr: string[] = [];
+            const labelArr: string[] = [];
+            if (typeof node[item.field] === 'string') {
+              arr = JSON.parse(node[item.field]);
+            } else {
+              arr = node[item.field];
+            }
+            arr.forEach((value) => {
+              const label = dict.children.find(
+                (child) => child.dictValue === value,
+              );
+              if (label) {
+                labelArr.push(label.dictLabel);
+              }
+            });
+            node[item.field] = labelArr;
+          } else {
+            node[item.field] = dict.children.find(
+              (child) => child.dictValue === node[item.field],
+            )
+              ? dict.children.find(
+                  (child) => child.dictValue === node[item.field],
+                ).dictLabel
+              : '';
+          }
         }
       });
       return node;

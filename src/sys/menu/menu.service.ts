@@ -71,6 +71,9 @@ export class MenuService {
       };
       condition.module = Memu_Module.PROJECT;
     }
+    // if (userInfo.userType === USER_TYPE.GENERAL_USER) {
+
+    // }
     const menu = await this.prisma.menu.findMany({
       where: condition,
       orderBy: {

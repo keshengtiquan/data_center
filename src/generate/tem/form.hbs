@@ -1,0 +1,101 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useVModel } from '@vueuse/core';
+import { getCompanyDeptListApi } from '@/api/setting/company-dept/index'
+import TreeSelect from '@/components/tree-select/index.vue'
+import {CompanyDeptTypeEnum} from '@/enums/index'
+import { getUserListApi } from '@/api/setting/user/index'
+import Select from '@/components/select/index.vue'
+import DictSelect from '@/components/dict-select/index.vue'
+import DictRadio from '@/components/dict-radio/index.vue'
+
+type FormState = {
+  {{#each addAndEditColumns}}
+  {{this.fieldName}}{{#unless this.whetherReq}}?{{/unless}}: {{this.fieldTsType}}
+  {{/each}}
+}
+const formRef = ref()
+const props = defineProps<{
+  modalValue: FormState
+}>()
+const emit = defineEmits(['update:modalValue'])
+const formState = useVModel(props, 'modalValue', emit)
+defineExpose({ formRef })
+</script>
+<template>
+  <a-form ref="formRef" :model="formState" layout="{{#if (eq formLayout 'horizontal')}}horizontal{{else}}vertical{{/if}}" :label-col="{ style: { width: '80px', } }" :wrapper-col="{ span: 24 }">
+    {{#if (eq gridWhether 'Y')}}
+    <a-row :gutter="16">
+      {{#each addAndEditColumns}}
+      <a-col :span="12">
+        <a-form-item label="{{this.fieldRemark}}" name="{{this.fieldName}}" {{#if this.whetherReq}}:rules="[{ required: true, message: '请输入{{this.fieldRemark}}' }]"{{/if}}>
+          {{#if (eq this.effectType 'input')}}
+          <a-input v-model:value="formState.{{this.fieldName}}" placeholder="{{this.fieldRemark}}" allow-clear></a-input>
+          {{/if}}
+          {{#if (eq this.effectType 'textarea')}}
+          <a-textarea v-model:value="formState.{{this.fieldName}}" placeholder="{{this.fieldRemark}}" :rows="4" allow-clear />
+          {{/if}}
+          {{#if (eq this.effectType 'select')}}
+            {{#if this.dictTypeCo}}
+          <DictSelect v-model:model-value="formState.{{this.fieldName}}" placeholder="{{this.fieldRemark}}" dict-name="{{this.dictTypeCo}}"></DictSelect>
+            {{else}}
+          <a-select v-model:value="formState.{{this.fieldName}}" allowClear>
+            <a-select-option value="test">test</a-select-option>
+          </a-select>
+            {{/if}}
+          {{/if}}
+          {{#if (eq this.effectType 'radio')}}
+            {{#if this.dictTypeCo}}
+          <DictRadio v-model:model-value="formState.{{this.fieldName}}" placeholder="{{this.fieldRemark}}" dict-name="{{this.dictTypeCo}}"></DictRadio>
+            {{else}}
+          <a-radio-group v-model:value="formState.{{this.fieldName}}">
+            <a-radio-button value="test">test</a-radio-button>
+          </a-radio-group>
+            {{/if}}
+          {{/if}}
+          {{#if (eq this.effectType 'inputNumber')}}
+          <a-input-number id="inputNumber" v-model:value="formState.{{this.fieldName}}" :min="1"  allow-clear />
+          {{/if}}
+        </a-form-item>
+      </a-col>
+      {{/each}}
+    </a-row>
+    {{/if}}
+    {{#if (eq gridWhether 'N')}}
+    {{#each addAndEditColumns}}
+    <a-form-item label="{{this.fieldRemark}}" name="{{this.fieldName}}" {{#if this.whetherReq}}:rules="[{ required: true, message: '请输入{{this.fieldRemark}}' }]"{{/if}}>
+      {{#if (eq this.effectType 'input')}}
+      <a-input v-model:value="formState.{{this.fieldName}}" placeholder="{{this.fieldRemark}}" allow-clear></a-input>
+      {{/if}}
+      {{#if (eq this.effectType 'textarea')}}
+      <a-textarea v-model:value="formState.{{this.fieldName}}" placeholder="{{this.fieldRemark}}" :rows="4" allow-clear />
+      {{/if}}
+      {{#if (eq this.effectType 'select')}}
+        {{#if this.dictTypeCo}}
+      <DictSelect v-model:model-value="formState.{{this.fieldName}}" placeholder="{{this.fieldRemark}}" dict-name="{{this.dictTypeCo}}"></DictSelect>
+        {{else}}
+      <a-select v-model:value="formState.{{this.fieldName}}" allowClear>
+        <a-select-option value="test">test</a-select-option>
+      </a-select>
+        {{/if}}
+      {{/if}}
+      {{#if (eq this.effectType 'radio')}}
+        {{#if this.dictTypeCo}}
+      <DictRadio v-model:model-value="formState.{{this.fieldName}}" placeholder="{{this.fieldRemark}}" dict-name="{{this.dictTypeCo}}"></DictRadio>
+        {{else}}
+      <a-radio-group v-model:value="formState.{{this.fieldName}}">
+        <a-radio-button value="test">test</a-radio-button>
+      </a-radio-group>
+        {{/if}}
+      {{/if}}
+      {{#if (eq this.effectType 'inputNumber')}}
+      <a-input-number id="inputNumber" v-model:value="formState.{{this.fieldName}}" :min="1"  allow-clear />
+      {{/if}}
+    </a-form-item>
+    {{/each}}
+    {{/if}}
+  </a-form>
+</template>
+
+
+<style scoped></style>

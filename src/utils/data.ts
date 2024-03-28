@@ -32,3 +32,15 @@ export function sqlToTs(type: string) {
   };
   return sqlTsContrast[type];
 }
+
+/**
+ * 下划线转驼峰
+ * @param str
+ * @returns
+ */
+export function toCamelCase(str: string) {
+  if (str === 'delete_flag') return 'delete_flag';
+  return str.replace(/_([a-z])/g, function (match, char) {
+    return char.toUpperCase();
+  });
+}

@@ -272,7 +272,10 @@ export class TenantService {
         area: saveTenantInfoDto.area,
         areaLeader: saveTenantInfoDto.areaLeader,
         projectType: saveTenantInfoDto.projectType,
-        projectProfessional: saveTenantInfoDto.projectProfessional,
+        projectProfessional:
+          saveTenantInfoDto.projectProfessional.length > 0
+            ? JSON.stringify(saveTenantInfoDto.projectProfessional)
+            : '',
       },
     });
 
@@ -331,7 +334,12 @@ export class TenantService {
         );
       });
 
-      data.projectNature = JSON.parse(data.projectNature);
+      data.projectNature = data.projectNature
+        ? JSON.parse(data.projectNature)
+        : '';
+      data.projectProfessional = data.projectProfessional
+        ? JSON.parse(data.projectProfessional)
+        : '';
       data.manager = personnelMap.get(data.manager).nickName;
       data.chiefEngineer = personnelMap.get(data.chiefEngineer).nickName;
       data.safetyDirector = personnelMap.get(data.safetyDirector).nickName;
@@ -373,6 +381,25 @@ export class TenantService {
    */
   async addTenantUser(addTenantUserDto: AddTenantUserDto) {
     const { tenantId, userIds } = addTenantUserDto;
+    //查询原有的用户
+    const tenant = await this.prisma.tenant.findFirst({
+      where: { id: tenantId },
+      include: { users: { include: { user: true } } },
+    });
+    const users = tenant.users.map((item) => item.user);
+    const userIdsArr = tenant.users.map((item) => item.userId);
+    const commonUserIds = userIds.filter((item) => userIdsArr.includes(item));
+    if (commonUserIds.length > 0) {
+      const nickName: string[] = [];
+      commonUserIds.forEach((item) => {
+        const user = users.find((user) => user.id === item);
+        nickName.push(user.nickName);
+      });
+      throw new BadRequestException(
+        `【${nickName.join()}】已经是该项目成员，请不要重复添加！`,
+      );
+    }
+
     const createdUser = await this.prisma.tenantsOnUsers.createMany({
       data: [...userIds.map((item) => ({ tenantId: tenantId, userId: item }))],
     });

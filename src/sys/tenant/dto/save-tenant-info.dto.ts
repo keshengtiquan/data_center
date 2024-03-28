@@ -84,7 +84,7 @@ export class SaveTenantInfoDto {
   @IsOptional()
   projectType: string;
   @IsOptional()
-  projectProfessional: string;
+  projectProfessional: string[];
 
   @IsOptional()
   companyName: string;

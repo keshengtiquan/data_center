@@ -65,8 +65,10 @@ export class UtcToLocalInterceptor implements NestInterceptor {
     const userList = [];
     // 遍历树形结构中的所有节点，构建用户名集合
     const traverseAndCollectUsernames = (node) => {
-      if (node.createBy) userNameSet.add(node.createBy);
-      if (node.updateBy) userNameSet.add(node.updateBy);
+      if (node.createBy && node.createBy !== 'system')
+        userNameSet.add(node.createBy);
+      if (node.updateBy && node.createBy !== 'system')
+        userNameSet.add(node.updateBy);
       if (node.children && node.children.length > 0) {
         node.children.forEach((child) => traverseAndCollectUsernames(child));
       }

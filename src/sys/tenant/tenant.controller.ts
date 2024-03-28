@@ -59,7 +59,11 @@ export class TenantController {
   @UseInterceptors(UtcToLocalInterceptor)
   @DictTransform([
     { dictType: 'ProjectType', field: 'projectType' },
-    { dictType: 'ProjectProfessional', field: 'projectProfessional' },
+    {
+      dictType: 'ProjectProfessional',
+      field: 'projectProfessional',
+      isArray: true,
+    },
     { dictType: 'Area', field: 'area' },
   ])
   @Get('/getlist')

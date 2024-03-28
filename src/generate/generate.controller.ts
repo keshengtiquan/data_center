@@ -2,10 +2,12 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
 import { GenerateService } from './generate.service';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -15,6 +17,10 @@ import { CreateGenBasicDto } from './dto/create-generate.dto';
 import { BasiceFindListDto } from './dto/basice-find-list.dto';
 import { generateParseIntPipe } from 'src/common/pipe/generateParseIntPipe';
 import { DictTransform } from '../common/decorators/dict.dectorator';
+import * as fs from 'fs';
+import * as path from 'path';
+import { GenConfig } from '@prisma/client';
+import { Response } from 'express';
 
 @ApiTags('代码生成')
 @Controller('generate')
@@ -74,6 +80,41 @@ export class GenerateController {
   @Auth()
   async getConfigList(@Query('basicId') basicId: number) {
     const data = await this.generateService.getConfigList(basicId);
+    return Result.success(data);
+  }
+
+  @ApiOperation({ summary: '保存配置' })
+  @ApiBearerAuth()
+  @Post('/saveConfig')
+  @Auth()
+  async saveConfig(@Body() tableData: GenConfig[]) {
+    const data = await this.generateService.saveConfig(tableData);
+    return Result.success(data);
+  }
+
+  @ApiOperation({ summary: '生成代码' })
+  @ApiBearerAuth()
+  @Get('/generateCode')
+  // @Auth()
+  @Header('Content-Type', 'application/octet-stream')
+  @Header('Content-Disposition', 'attachment')
+  async generateTem(@Query('id') id: number, @Res() res: Response) {
+    const filename = await this.generateService.generateTem(id);
+    const filePath = path.join(process.cwd(), filename);
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.on('end', () => {
+      // Optional: Delete the file after sending
+      fs.unlinkSync(filePath);
+    });
+    return fileStream.pipe(res);
+  }
+
+  @ApiOperation({ summary: '预览代码' })
+  @ApiBearerAuth()
+  @Get('/previewCode')
+  @Auth()
+  async previewCode(@Query('id') id: number) {
+    const data = await this.generateService.previewCode(id);
     return Result.success(data);
   }
 }

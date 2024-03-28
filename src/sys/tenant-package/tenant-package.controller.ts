@@ -6,6 +6,7 @@ import {
   Query,
   HttpStatus,
   HttpCode,
+  UseInterceptors,
 } from '@nestjs/common';
 import { TenantPackageService } from './tenant-package.service';
 import { CreateTenantPackageDto } from './dto/create-tenant-package.dto';
@@ -14,6 +15,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Auth } from '../auth/decorators/auth.decorators';
 import { Result } from 'src/common/result';
 import { FindPackageListDto } from './dto/find-tenant-package.dto';
+import { UtcToLocalInterceptor } from 'src/common/interceptor/utc2Local.interceptor';
 
 @ApiTags('项目套餐管理')
 @Controller('package')
@@ -36,6 +38,7 @@ export class TenantPackageController {
   @ApiBearerAuth()
   @Get('/getList')
   @Auth()
+  @UseInterceptors(UtcToLocalInterceptor)
   async getList(@Query() findPackageListDto: FindPackageListDto) {
     return Result.success(
       await this.tenantPackageService.getList(findPackageListDto),

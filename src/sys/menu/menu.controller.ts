@@ -37,6 +37,8 @@ export class MenuController {
   @HttpCode(HttpStatus.OK)
   async getMenu(@Query('module') module: string) {
     const data = await this.menuService.getMenu(['C', 'M'], ['0'], module);
+    if (data.length === 0)
+      return Result.error('当前用户菜单列表为空, 请联系管理员');
     return Result.success(data);
   }
 

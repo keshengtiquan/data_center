@@ -1,0 +1,39 @@
+<script setup lang="ts">
+import Modal from '@/components/modal/index.vue'
+import {{uppermoduleName}}Form from './{{moduleName}}-form.vue'
+import { reactive, ref } from 'vue';
+import { create{{uppermoduleName}}Api, {{uppermoduleName}}Create} from '@/api/{{moduleName}}/index';
+
+const emit = defineEmits(['submit'])
+const open = ref(false)
+const {{moduleName}}FormRef = ref()
+const formState = reactive<{{uppermoduleName}}Create>({
+  {{#each addColumns}}
+  {{this.fieldName}}: undefined,
+  {{/each}}
+})
+const showModal = () => {
+  open.value = true
+}
+const submit = async () => {
+  const values = await {{moduleName}}FormRef.value.formRef.validate()
+  if (!values) return
+  const res = await create{{uppermoduleName}}Api(formState)
+  if (res.code === 200) {
+    emit('submit')
+    close()
+  }
+}
+
+const close = () => {
+  {{moduleName}}FormRef.value.formRef.resetFields()
+  open.value = false
+}
+defineExpose({ showModal })
+</script>
+<template>
+  <Modal v-model="open" title="添加{{busName}}" @ok="submit" @cancel="close">
+    <{{uppermoduleName}}Form v-model:modal-value="formState" ref="{{moduleName}}FormRef" />
+  </Modal>
+</template>
+<style scoped></style>

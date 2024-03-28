@@ -1,0 +1,78 @@
+import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import { {{uppermoduleName}}Service } from './{{moduleName}}.service';
+import { Create{{uppermoduleName}}Dto } from './dto/create-{{moduleName}}.dto';
+import { Update{{uppermoduleName}}Dto } from './dto/update-{{moduleName}}.dto';
+import { Find{{uppermoduleName}}ListDto } from './dto/find-{{moduleName}}-list.dto';
+import { Result } from 'src/common/result';
+import { Auth } from '../auth/decorators/auth.decorators';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+
+@ApiTags('{{busName}}管理')
+@Controller('{{moduleName}}')
+export class {{uppermoduleName}}Controller {
+  constructor(private readonly {{moduleName}}Service: {{uppermoduleName}}Service) {}
+
+  @ApiOperation({ summary: '创建{{busName}}' })
+  @ApiBearerAuth()
+  @Post('/create')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  async create(@Body() create{{uppermoduleName}}Dto: Create{{uppermoduleName}}Dto) {
+    const data = await this.{{moduleName}}Service.create(create{{uppermoduleName}}Dto);
+    return Result.success(data, '创建{{busName}}成功');
+  }
+
+  @ApiOperation({ summary: '查询{{busName}}列表' })
+  @ApiBearerAuth()
+  @Get('/getlist')
+  @Auth()
+  async findAll(@Query() find{{uppermoduleName}}ListDto: Find{{uppermoduleName}}ListDto) {
+    const data = await this.{{moduleName}}Service.findAll(find{{uppermoduleName}}ListDto);
+    return Result.success(data, '查询{{busName}}列表成功');
+  }
+
+  @ApiOperation({ summary: '根据ID查询{{busName}}' })
+  @ApiBearerAuth()
+  @Get('/get')
+  @Auth()
+  async findOne(@Query('id', generateParseIntPipe('id')) id: number) {
+    const data = await this.{{moduleName}}Service.findOne(id);
+    return Result.success(data, '查询{{busName}}成功');
+  }
+
+  @ApiOperation({ summary: '更新{{busName}}' })
+  @ApiBearerAuth()
+  @Post('/update')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  async update(@Body() update{{uppermoduleName}}Dto: Update{{uppermoduleName}}Dto) {
+    const data = await this.{{moduleName}}Service.update(update{{uppermoduleName}}Dto);
+    return Result.success(data, '更新{{busName}}成功');
+  }
+
+  @ApiOperation({ summary: '删除{{busName}}' })
+  @ApiBearerAuth()
+  @Post('/delete')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  async remove(@Body('id', generateParseIntPipe('id')) id: number) {
+    const data = await this.{{moduleName}}Service.remove(id);
+    return Result.success(data, '删除{{busName}}成功');
+  }
+
+  @ApiOperation({ summary: '批量删除{{busName}}' })
+  @ApiBearerAuth()
+  @Post('/batchDelete')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  async batchDelete(@Body('ids') ids: number[]) {
+    const data = await this.{{moduleName}}Service.batchDelete(ids);
+    return Result.success(data, '删除{{busName}}成功');
+  }
+}

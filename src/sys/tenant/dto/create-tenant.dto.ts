@@ -20,7 +20,7 @@ export class CreateTenantDto {
 
   @ApiProperty({ description: '项目管理员' })
   @IsNotEmpty({ message: '项目管理员不能为空' })
-  @Matches(NAME_REGEX, { message: '用户名不正确，长度在3-16之间' })
+  @Matches(NAME_REGEX, { message: '用户名不正确，长度在5-20之间' })
   userName: string;
 
   @ApiProperty({ description: '项目管理员密码' })

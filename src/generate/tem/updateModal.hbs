@@ -1,0 +1,43 @@
+<script setup lang="ts">
+import Modal from '@/components/modal/index.vue'
+import {{uppermoduleName}}Form from './{{moduleName}}-form.vue'
+import { reactive, ref } from 'vue';
+import { get{{uppermoduleName}}ByIdApi, update{{uppermoduleName}}Api } from '@/api/{{moduleName}}/index';
+
+const emit = defineEmits(['submit'])
+const loading = ref(false)
+const open = ref(false)
+const {{moduleName}}FormRef = ref()
+const formState = reactive({
+  {{#each editColumns}}
+  {{this.fieldName}}: undefined,
+  {{/each}}
+})
+const showModal = async (id: number) => {
+  open.value = true
+  loading.value = true
+  const { data: {{moduleName}} } = await get{{uppermoduleName}}ByIdApi({id})
+  Object.assign(formState, {{moduleName}})
+  loading.value = false
+}
+const submit = async () => {
+  const res = await update{{uppermoduleName}}Api(formState)
+  if (res.code === 200) {
+    emit('submit')
+    close()
+  }
+}
+
+const close = () => {
+  {{moduleName}}FormRef.value.formRef.resetFields()
+  open.value = false
+}
+defineExpose({ showModal })
+</script>
+<template>
+  <Modal v-model="open" title="修改{{busName}}" @ok="submit" @cancel="close">
+    <a-skeleton :loading="loading" />
+    <{{uppermoduleName}}Form v-model:modal-value="formState" ref="{{moduleName}}FormRef" />
+  </Modal>
+</template>
+<style scoped></style>

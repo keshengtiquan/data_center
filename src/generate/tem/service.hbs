@@ -1,0 +1,115 @@
+import { Injectable } from '@nestjs/common';
+import { Create{{uppermoduleName}}Dto } from './dto/create-{{moduleName}}.dto';
+import { Update{{uppermoduleName}}Dto } from './dto/update-{{moduleName}}.dto';
+import { User } from '@prisma/client';
+
+@Injectable()
+export class {{uppermoduleName}}Service {
+  @Inject()
+  private prisma: PrismaService;
+  @Inject(ClsService)
+  private readonly cls: ClsService;
+
+  /**
+  * 创建{{busName}}
+  * @param create{{uppermoduleName}}Dto
+  * @returns
+  */
+  async create(create{{uppermoduleName}}Dto: Create{{uppermoduleName}}Dto) {
+    const userInfo = this.cls.get('headers').user as User
+    return await this.prisma.{{moduleName}}.create({
+      data: {
+        {{#each addColumns}}
+        {{this.fieldName}}: create{{uppermoduleName}}Dto.{{this.fieldName}},
+        {{/each}}
+        createdBy: userInfo.userName,
+        updatedBy: userInfo.userName,
+      }
+    })
+  }
+
+  /**
+  * 查询{{busName}}列表
+  * @param Find{{uppermoduleName}}ListDto 
+  * @returns
+  */
+  async findAll(find{{uppermoduleName}}ListDto: Find{{uppermoduleName}}ListDto) {
+    const {current, pageSize, {{#each searchColumns}}{{this.fieldName}}, {{/each}} } = find{{uppermoduleName}}ListDto
+    const condition = {
+      {{#each searchColumns}}
+      {{#if (eq this.queryType 'contains')}}
+      ...({{this.fieldName}} && { {{this.fieldName}}: { {{this.queryType}}: {{this.fieldName}} } }),
+      {{/if}}      
+      {{#if (eq this.queryType 'equals')}}
+      ...({{this.fieldName}} && { {{this.fieldName}}: {{this.fieldName}} }),
+      {{/if}}
+      {{/each}}
+      deleteflag: 0,
+    };
+    const list = await this.prisma.{{moduleName}}.findMany({
+      where: condition,
+      skip: (current - 1) * pageSize,
+      take: pageSize,
+    })
+
+    return {
+      results: list,
+      pageSize,
+      current,
+      total: await this.prisma.{{moduleName}}.count({ where: condition }),
+    };
+  }
+
+  /**
+  * 根据ID查询{{busName}}
+  * @param id
+  * @returns
+  */
+  async findOne(id: number) {
+    return await this.prisma.{{moduleName}}.findUnique({
+      where: { id },
+    })
+  }
+
+  /**
+  * 更新{{busName}}
+  * @param id
+  * @returns
+  */
+  async update(update{{uppermoduleName}}Dto: Update{{uppermoduleName}}Dto) {
+    const userInfo = this.cls.get('headers').user as User
+    return await this.prisma.{{moduleName}}.update({
+      where: {id: update{{uppermoduleName}}Dto.id},
+      data: {
+        {{#each editColumns}}
+        {{this.fieldName}}: update{{uppermoduleName}}Dto.{{this.fieldName}},
+        {{/each}}
+        updatedBy: userInfo.userName,
+      }
+    })
+  }
+
+  /**
+  * 删除{{busName}}
+  * @param id
+  * @returns
+  */
+  async remove(id: number) {
+    return await this.prisma.{{moduleName}}.update({
+      where: {id},
+      data: {deleteflag: 1}
+    })
+  }
+
+  /**
+  * 批量删除{{busName}}
+  * @param ids
+  * @returns
+  */
+  async remove(ids: number[]) {
+    return await this.prisma.{{moduleName}}.updateMany({
+      where: {id: { in: ids}},
+      data: {deleteflag: 1}
+    })
+  }
+}

@@ -77,7 +77,7 @@ export class UserService {
       companyDeptId,
       status,
     } = findListDto;
-    // 项目中已有的用户ID
+    // 排除项目中已有的用户ID
     let userIds = [];
     if (tenantId) {
       const data = await this.prisma.tenantsOnUsers.findMany({

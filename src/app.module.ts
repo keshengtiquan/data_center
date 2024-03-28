@@ -15,6 +15,7 @@ import { CompanyDeptModule } from './sys/company-dept/company-dept.module';
 import { DictModule } from './sys/dict/dict.module';
 import { RedisModule } from './redis/redis.module';
 import { GenerateModule } from './generate/generate.module';
+import { TestModule } from './sys/test/test.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { GenerateModule } from './generate/generate.module';
     DictModule,
     RedisModule,
     GenerateModule,
+    TestModule,
   ],
   controllers: [],
   providers: [

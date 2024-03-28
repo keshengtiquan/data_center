@@ -65,10 +65,10 @@ model Role {
 
 // 用户角色关联表
 model UsersOnRoles {
-  user   User @relation(fields: [userId], references: [id])
-  userId Int  @map("user_id")
-  role   Role @relation(fields: [roleId], references: [id])
-  roleId Int  @map("role_id")
+  user     User @relation(fields: [userId], references: [id])
+  userId   Int  @map("user_id")
+  role     Role @relation(fields: [roleId], references: [id])
+  roleId   Int  @map("role_id")
 
   @@id([userId, roleId])
   @@map("sys_user_role")
@@ -110,8 +110,8 @@ model Tenant {
   supervisorContact       String?          @map("supervisor_contact") //监理单位联系人
   supervisorAddress       String?          @map("supervisor_address") //监理单位地址
   supervisorTel           String?          @map("supervisor_tel") //监理单位电话
-  companyDeptId           Int              @default(6) @map("company_dept_id") //所属机构
-  companyDept             CompanyDept      @relation(fields: [companyDeptId], references: [id]) //外键
+  companyDeptId           Int?             @map("company_dept_id") //所属机构
+  companyDept             CompanyDept?     @relation(fields: [companyDeptId], references: [id]) //外键
   projectLocation         String?          @map("project_location") //项目地点
   areaLeader              Int?             @map("area_leader") // 区域领导人
   projectType             String?          @map("project_type") // 项目类型
@@ -251,29 +251,29 @@ model GenBasic {
 }
 
 model GenConfig {
-  id          Int      @id @default(autoincrement())
-  basicId     Int
-  GenBasic    GenBasic @relation(fields: [basicId], references: [id])
-  isTableKey  Boolean? @map("is_table_key")
-  fieldName   String?  @map("field_name") @db.VarChar(255) //字段名称
-  fieldRemark String?  @map("field_remark") @db.VarChar(255) //字段备注
-  fieldType   String?  @map("field_type") @db.VarChar(255) //字段类型
-  fieldTsType String?  @map("field_Ts_type") @db.VarChar(255) //字段js类型
-  effectType  String?  @map("effect_type") @db.VarChar(255) //作用类型
-  dictTypeCo  String?  @map("dict_type_co") @db.VarChar(255) //字典类型
-  whetherTable Boolean? @map("whether_table") //是否生成表
-  whetherRet   Boolean? @map("whether_ret") //是否列显示
-  whetherAdd   Boolean? @map("whether_add") //是否生成添加
-  whetherEdit  Boolean? @map("whether_edit") //是否生成修改
-  whetherReq   Boolean? @map("whether_req")  //是否必填
-  queryWheth  Boolean? @map("query_wheth") //查询条件
-  queryType   String?  @map("query_type") @db.VarChar(255) //查询方式
-  sortNumber  Int?     @default(10) @map("sort_number")
-  createBy    String?  @map("create_by") @db.VarChar(255)
-  updateBy    String?  @map("update_by") @db.VarChar(255)
-  createTime  DateTime @default(now()) @map("create_time")
-  updateTime  DateTime @updatedAt @map("update_time")
-  deleteflag  Int      @default(0) @map("delete_flag")
+  id           Int      @id @default(autoincrement())
+  basicId      Int
+  GenBasic     GenBasic @relation(fields: [basicId], references: [id])
+  isTableKey   Boolean? @map("is_table_key")
+  fieldName    String?  @map("field_name") @db.VarChar(255) //字段名称
+  fieldRemark  String?  @map("field_remark") @db.VarChar(255) //字段备注
+  fieldType    String?  @map("field_type") @db.VarChar(255) //字段类型
+  fieldTsType  String?  @map("field_Ts_type") @db.VarChar(255) //字段Ts类型
+  effectType   String?  @map("effect_type") @db.VarChar(255) //作用类型
+  dictTypeCo   String?  @map("dict_type_co") @db.VarChar(255) //字典类型
+  whetherTable Boolean? @map("whether_table") //列表显示
+  whetherRet   Boolean? @map("whether_ret") //列省略
+  whetherAdd   Boolean? @map("whether_add") //增
+  whetherEdit  Boolean? @map("whether_edit") //改
+  whetherReq   Boolean? @map("whether_req") //是否必填
+  queryWheth   Boolean? @map("query_wheth") //查询
+  queryType    String?  @map("query_type") @db.VarChar(255) //查询方式
+  sortNumber   Int?     @default(10) @map("sort_number")
+  createBy     String?  @map("create_by") @db.VarChar(255)
+  updateBy     String?  @map("update_by") @db.VarChar(255)
+  createTime   DateTime @default(now()) @map("create_time")
+  updateTime   DateTime @updatedAt @map("update_time")
+  deleteflag   Int      @default(0) @map("delete_flag")
 
   @@map("gen_config")
 }

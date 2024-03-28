@@ -6,18 +6,19 @@ export class UserNameToIdPipe implements PipeTransform {
   constructor(private readonly transformField: string[]) {}
 
   async transform(value: any) {
-    const personnel = [];
+    const personnel = new Set<string>();
     this.transformField.forEach((field) => {
       if (typeof value[field] === 'number') return;
-      personnel.push(value[field]);
+      personnel.add(value[field]);
     });
     const prisma = new PrismaClient();
-    if (personnel.length > 0) {
+    if (personnel.size > 0) {
+      const perArr: string[] = Array.from(personnel);
       const data = await prisma.user.findMany({
-        where: { userName: { in: personnel } },
+        where: { nickName: { in: perArr } },
       });
       this.transformField.forEach((field) => {
-        const user = data.find((item) => item.userName === value[field]);
+        const user = data.find((item) => item.nickName === value[field]);
         value[field] = user.id;
       });
     }

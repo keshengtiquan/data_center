@@ -1,0 +1,16 @@
+import { Type } from 'class-transformer';
+import { IsOptional, IsNotEmpty } from 'class-validator';
+
+export class Create{{uppermoduleName}}Dto {
+  {{#each addColumns}}
+  {{#if this.whetherReq}}
+  @IsNotEmpty({message: '{{this.fieldName}}不能为空'})
+  {{else}}
+  @IsOptional()
+  {{/if}}
+  {{#if (eq this.fieldTsType 'number')}}
+  @Type(() => Number)
+  {{/if}}
+  {{this.fieldName}}: {{this.fieldTsType}};
+  {{/each}}
+}

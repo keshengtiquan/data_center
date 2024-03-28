@@ -1,0 +1,101 @@
+<script setup lang="ts">
+import PageContainer from '@/components/page-container/index.vue'
+import ProTable from '@/components/pro-table/index.vue'
+import { createVNode, ref, h } from "vue";
+import { useTable } from "@/composables/useTable.ts";
+import { delete{{uppermoduleName}}Api, get{{uppermoduleName}}ListApi, batchDelete{{uppermoduleName}}Api, {{uppermoduleName}} } from "@/api/{{moduleName}}/index";
+import { useTheme } from '@/composables/theme'
+import { message, Modal } from "ant-design-vue";
+import { ExclamationCircleOutlined, PlusOutlined, DeleteOutlined } from "@ant-design/icons-vue";
+import Create{{uppermoduleName}}Modal from './component/create-{{moduleName}}-modal.vue'
+import Update{{uppermoduleName}}Modal from './component/update-{{moduleName}}-modal.vue'
+
+const { token } = useTheme()
+const columns = [
+  {{#each tableColumns}}
+  { title: '{{this.fieldRemark}}', dataIndex: '{{this.fieldName}}', align: 'center', {{#unless this.whetherTable}}hide: true,{{/unless}}{{#if this.whetherRet}}ellipsis: true,{{/if}}{{#if this.queryWheth}}search: true,{{#if this.dictTypeCo}}valueType: 'dict', dictType: '{{this.dictTypeCo}}',{{else}}{{#if (or (eq this.queryType 'contains') (eq this.queryType 'equals') )}}valueType: 'input',{{/if}}{{/if}}{{/if}} },
+  {{/each}}
+  { title: '操作', dataIndex: 'actions', width: 100, align: 'center', fixed: 'right' },
+]
+const create{{uppermoduleName}}ModalRef = ref()
+const update{{uppermoduleName}}ModalRef = ref()
+const {{moduleName}}TableRef = ref()
+const selectedRowKeys = ref([])
+const { pagination, loading, tableData, getTableData } = useTable(get{{uppermoduleName}}ListApi)
+getTableData()
+/**
+ * 删除{{busName}}
+ * @param data record
+ */
+const delete{{uppermoduleName}} = (data: {{uppermoduleName}}) => {
+  Modal.confirm({
+    title: `是否删除【${data.id}】`,
+    icon: createVNode(ExclamationCircleOutlined),
+    content: '删除后不可恢复！',
+    onOk() {
+      delete{{uppermoduleName}}Api({id: data.id}).then(res => {
+        if (res.code === 200) {
+          getTableData({{moduleName}}TableRef.value.onReload())
+          message.success(res.message)
+        }
+      })
+    },
+    onCancel() {
+      message.info('取消删除');
+    },
+  });
+}
+/**
+ * 批量删除{{busName}}
+ * @param data record
+ */
+const batchdelete = () => {
+  Modal.confirm({
+    title: `是否删除所选的${selectedRowKeys.value.length}项`,
+    icon: createVNode(ExclamationCircleOutlined),
+    content: '删除后不可恢复！',
+    onOk() {
+      batchDelete{{uppermoduleName}}Api({ ids: selectedRowKeys.value }).then(res => {
+        if (res.code === 200) {
+          getTableData({{moduleName}}TableRef.value.onReload())
+          message.success(res.message)
+          selectedRowKeys.value = []
+        }
+      })
+    },
+    onCancel() {
+      message.info('取消删除')
+    },
+  });
+}
+
+</script>
+<template>
+  <PageContainer>
+    <ProTable :columns="columns" bordered ref="{{moduleName}}TableRef" :loading="loading" :pagination="pagination"
+      v-model:selectedRowKeys="selectedRowKeys" @refresh="() => getTableData()" rowKey="id"
+      :rowSelection="{ preserveSelectedRowKeys: true, columnWidth: 10 }" @search="(params) => getTableData(params)"
+      :dataSource="tableData">
+      <template #toolLeft>
+        <a-space>
+          <a-button type="primary" :icon="h(PlusOutlined)"
+            @click="create{{uppermoduleName}}ModalRef.showModal()">新增</a-button>
+          <a-button danger :disabled="selectedRowKeys.length <= 0" :icon="h(DeleteOutlined)"
+            @click="batchdelete">批量删除</a-button>
+        </a-space>
+      </template>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.dataIndex === 'actions'">
+          <a-space :size="5">
+            <span class="cursor-pointer" @click="update{{uppermoduleName}}ModalRef.showModal(record.id)" :style="{color: token.colorPrimary}">编辑</span>
+            <a-divider type="vertical" />
+            <span class="cursor-pointer" @click="delete{{uppermoduleName}}(record)" :style="{color: token.colorErrorText}">删除</span>
+          </a-space>
+        </template>
+      </template>
+    </ProTable>
+    <Create{{uppermoduleName}}Modal ref="create{{uppermoduleName}}ModalRef" @submit="() => getTableData({{moduleName}}TableRef.onReload())" />
+    <Update{{uppermoduleName}}Modal ref="update{{uppermoduleName}}ModalRef" @submit="() => getTableData({{moduleName}}TableRef.onReload())" />
+  </PageContainer>
+</template>
+<style scoped></style>

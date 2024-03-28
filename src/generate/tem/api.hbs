@@ -1,0 +1,78 @@
+import { http } from '@/utils/request.ts'
+import { AxiosResults } from '@/api/types.ts'
+
+export interface {{uppermoduleName}} {
+  {{#each allColumns}}
+  {{this.fieldName}}: {{this.fieldTsType}};
+  {{/each}}
+}
+export interface {{uppermoduleName}}Create {
+  {{#each addColumns}}
+  {{this.fieldName}}: {{this.fieldTsType}};
+  {{/each}}
+}
+export interface {{uppermoduleName}}Find {
+  {{#each searchColumns}}
+  {{this.fieldName}}: {{this.fieldTsType}};
+  {{/each}}
+}
+export interface {{uppermoduleName}}Update {
+  id: number;
+  {{#each editColumns}}
+  {{this.fieldName}}: {{this.fieldTsType}};
+  {{/each}}
+}
+
+/**
+ * 创建{{busName}}
+ * @param data
+ * @returns
+ */
+export const create{{uppermoduleName}}Api = (data: {{uppermoduleName}}Create) => {
+  return http.post<AxiosResults<{{uppermoduleName}}>>('/{{moduleName}}/create', { data })
+}
+
+/**
+ * 获取{{busName}}列表
+ * @param params
+ * @returns
+ */
+export const get{{uppermoduleName}}ListApi = (params: {{uppermoduleName}}Find) => {
+  return http.get<AxiosResults<{{uppermoduleName}}[]>>('/{{moduleName}}/getlist', { params })
+}
+
+/**
+ * 根据ID获取{{busName}}
+ * @param params
+ * @returns
+ */
+export const get{{uppermoduleName}}ByIdApi = (params: { id: number }) => {
+  return http.get<AxiosResults<{{uppermoduleName}}>>('/{{moduleName}}/get', { params })
+}
+
+/**
+ * 更新{{busName}}
+ * @param params 
+ * @returns 
+ */
+export const update{{uppermoduleName}}Api = (data: {{uppermoduleName}}Update) => {
+  return http.post<AxiosResults<{{uppermoduleName}}>>('/{{moduleName}}/update', { data })
+}
+
+/**
+ * 删除{{busName}}
+ * @param params 
+ * @returns 
+ */
+export const delete{{uppermoduleName}}Api = (data: { id: number }) => {
+  return http.post<AxiosResults<any>>('/{{moduleName}}/delete', { data })
+}
+
+/**
+ * 批量删除{{busName}}
+ * @param params 
+ * @returns 
+ */
+export const batchDelete{{uppermoduleName}}Api = (data: { ids: number[] }) => {
+  return http.post<AxiosResults<any>>('/{{moduleName}}/batchDelete', { data })
+}
