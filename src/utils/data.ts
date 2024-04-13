@@ -1,3 +1,5 @@
+import { endOfWeek, format, startOfWeek } from 'date-fns';
+
 export function formatDate(date: Date, format: string) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -29,6 +31,8 @@ export function sqlToTs(type: string) {
     bool: 'boolean',
     boolean: 'boolean',
     time: 'string',
+    decimal: 'number',
+    tinyint: 'boolean',
   };
   return sqlTsContrast[type];
 }
@@ -44,3 +48,15 @@ export function toCamelCase(str: string) {
     return char.toUpperCase();
   });
 }
+
+/**
+ * 获取本周的开始时间结束时间
+ */
+export const getWeekStartAndEnd = (date: Date) => {
+  const weekStartDate = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  const weekEndDate = format(endOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  return {
+    startDate: weekStartDate,
+    endDate: weekEndDate,
+  };
+};

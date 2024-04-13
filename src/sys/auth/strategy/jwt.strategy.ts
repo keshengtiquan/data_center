@@ -25,7 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         id: id,
       },
       include: {
-        CompanyDept: true,
+        CompanyDept: { where: { deleteflag: 0 } },
         tenants: true,
       },
     });

@@ -42,14 +42,7 @@ export class GenerateService {
       .$queryRaw`SELECT COLUMN_NAME AS column_name, DATA_TYPE AS data_type, COLUMN_COMMENT AS comment
       FROM information_schema.columns
       WHERE table_schema = 'pinrun_data_center' AND table_name = ${tableName}
-      ORDER BY
-        CASE
-          WHEN COLUMN_NAME = 'id' THEN 1
-          WHEN COLUMN_NAME = 'delete_flag' THEN 4
-          WHEN COLUMN_NAME IN ('create_by', 'update_by', 'create_time', 'update_time') THEN 3
-          ELSE 2
-        END,
-        COLUMN_NAME;`;
+      ORDER BY 'sort_number' asc`;
     return list;
   }
 
@@ -69,10 +62,7 @@ export class GenerateService {
         },
       });
     } else {
-      const toCommonFieldEstimate = (
-        fieldName: string,
-        defaultValue: boolean,
-      ) => {
+      const toCommonFieldEstimate = (fieldName: string, defaultValue: boolean) => {
         if (
           fieldName.indexOf('createBy') > -1 ||
           fieldName.indexOf('updateBy') > -1 ||
@@ -82,10 +72,7 @@ export class GenerateService {
           return defaultValue;
         }
       };
-      const toCommonFieldDefaultValue = (
-        fieldName: string,
-        defaultValue: boolean,
-      ) => {
+      const toCommonFieldDefaultValue = (fieldName: string, defaultValue: boolean) => {
         if (
           fieldName.indexOf('createBy') > -1 ||
           fieldName.indexOf('updateBy') > -1 ||
@@ -116,8 +103,8 @@ export class GenerateService {
             effectType: item.data_type === 'datetime' ? 'datepicker' : 'input',
             whetherTable: toCommonFieldDefaultValue(item.column_name, true),
             whetherRet: toCommonFieldEstimate(item.column_name, false),
-            whetherAdd: toCommonFieldDefaultValue(item.column_name, true),
-            whetherEdit: toCommonFieldDefaultValue(item.column_name, true),
+            whetherAdd: toCommonFieldDefaultValue(item.column_name, false),
+            whetherEdit: toCommonFieldDefaultValue(item.column_name, false),
             whetherReq: toCommonFieldEstimate(item.column_name, false),
             queryWheth: toCommonFieldEstimate(item.column_name, false),
             sortNumber: index + 1,
@@ -144,6 +131,9 @@ export class GenerateService {
       },
       take: pageSize,
       skip: (current - 1) * pageSize,
+      orderBy: {
+        createTime: 'desc',
+      }
     });
 
     return {
@@ -174,6 +164,7 @@ export class GenerateService {
         basicId: basicId,
         deleteflag: 0,
       },
+      orderBy: {sortNumber: 'asc'}
     });
     return list.filter((item) => item.fieldName !== 'delete_flag');
   }
@@ -222,9 +213,7 @@ export class GenerateService {
 
     const genData = {
       moduleName: basicData.moduleName,
-      uppermoduleName:
-        basicData.moduleName.charAt(0).toUpperCase() +
-        basicData.moduleName.slice(1),
+      uppermoduleName: basicData.moduleName.charAt(0).toUpperCase() + basicData.moduleName.slice(1),
       busName: basicData.busName,
       addColumns: configData.filter((item) => item.whetherAdd),
       searchColumns: configData.filter((item) => item.queryWheth),
@@ -246,28 +235,18 @@ export class GenerateService {
     });
     const genData = {
       moduleName: basicData.moduleName,
-      uppermoduleName:
-        basicData.moduleName.charAt(0).toUpperCase() +
-        basicData.moduleName.slice(1),
+      uppermoduleName: basicData.moduleName.charAt(0).toUpperCase() + basicData.moduleName.slice(1),
       busName: basicData.busName,
-      addColumns: configData.filter(
-        (item) => item.whetherAdd && item.fieldName !== 'delete_flag',
-      ),
-      editColumns: configData.filter(
-        (item) => item.whetherEdit && item.fieldName !== 'delete_flag',
-      ),
+      addColumns: configData.filter((item) => item.whetherAdd && item.fieldName !== 'delete_flag'),
+      editColumns: configData.filter((item) => item.whetherEdit && item.fieldName !== 'delete_flag'),
       addAndEditColumns: configData.filter(
-        (item) =>
-          item.fieldName !== 'delete_flag' &&
-          (item.whetherAdd || item.whetherEdit),
+        (item) => item.fieldName !== 'delete_flag' && (item.whetherAdd || item.whetherEdit),
       ),
       searchColumns: configData.filter((item) => item.queryWheth),
       formLayout: basicData.formLayout,
       gridWhether: basicData.gridWhether,
       allColumns: configData,
-      tableColumns: configData.filter(
-        (item) => item.fieldName !== 'delete_flag',
-      ),
+      tableColumns: configData.filter((item) => item.fieldName !== 'delete_flag'),
     };
     return this.genPreviewCode(genData);
   }
@@ -278,19 +257,8 @@ export class GenerateService {
    * @returns
    */
   async genPreviewCode(genData: any) {
-    const [
-      controller,
-      service,
-      module,
-      createDto,
-      updateDto,
-      findListDto,
-      form,
-      api,
-      createModal,
-      updateModal,
-      table,
-    ] = await this.generateFiles(genData);
+    const [controller, service, module, createDto, updateDto, findListDto, form, api, createModal, updateModal, table] =
+      await this.generateFiles(genData);
 
     return {
       genBasicCodeBackendResultList: [
@@ -367,9 +335,7 @@ export class GenerateService {
     });
     output.on('close', function () {
       console.log(archive.pointer() + ' total bytes');
-      console.log(
-        'archiver has been finalized and the output file descriptor has closed.',
-      );
+      console.log('archiver has been finalized and the output file descriptor has closed.');
     });
     output.on('end', function () {
       console.log('Data has been drained');
@@ -387,19 +353,8 @@ export class GenerateService {
     });
     archive.pipe(output);
 
-    const [
-      controller,
-      service,
-      module,
-      createDto,
-      updateDto,
-      findListDto,
-      form,
-      api,
-      createModal,
-      updateModal,
-      table,
-    ] = await this.generateFiles(genData);
+    const [controller, service, module, createDto, updateDto, findListDto, form, api, createModal, updateModal, table] =
+      await this.generateFiles(genData);
 
     archive.append(controller, {
       name: `backend/${genData.moduleName}.controller.ts`,

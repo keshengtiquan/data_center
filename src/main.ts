@@ -16,7 +16,6 @@ async function bootstrap() {
   );
 
   app.useStaticAssets(join(__dirname, '..', 'public'));
-  console.log(join(__dirname, '..', 'public'));
 
   const config = new DocumentBuilder()
     .setTitle('数据服务')

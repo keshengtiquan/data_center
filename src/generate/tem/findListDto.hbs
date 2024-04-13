@@ -1,17 +1,14 @@
 import { Type } from 'class-transformer';
-import { IsOptional, IsNotEmpty } from 'class-validator';
+import { IsOptional } from 'class-validator';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 export class Find{{uppermoduleName}}ListDto extends PaginationDto{
   {{#each searchColumns}}
-  {{#if this.whetherReq}}
-  @IsNotEmpty({message: '{{this.fieldName}}不能为空'})
-  {{else}}
   @IsOptional()
-  {{/if}}
   {{#if (eq this.fieldTsType 'number')}}
   @Type(() => Number)
   {{/if}}
   {{this.fieldName}}: {{this.fieldTsType}};
+
   {{/each}}
 }

@@ -10,6 +10,7 @@ import { USER_TYPE } from 'src/common/enum';
 import { ClsService } from 'nestjs-cls';
 import { CompanyDeptService } from '../company-dept/company-dept.service';
 import { extractSubNodeList } from 'src/utils/tree';
+import { ExcelService } from 'src/excel/excel.service';
 
 @Injectable()
 export class UserService {
@@ -19,6 +20,18 @@ export class UserService {
   private readonly cls: ClsService;
   @Inject(CompanyDeptService)
   private readonly companyDeptService: CompanyDeptService;
+  @Inject(ExcelService)
+  private readonly excelService: ExcelService;
+
+  private readonly tableHeader = [
+    { col: 'A', width: 20, key: 'userName', header: '账号*' },
+    { col: 'B', width: 20, key: 'nickName', header: '姓名' },
+    { col: 'C', width: 20, key: 'gender', header: '性别' },
+    { col: 'D', width: 20, key: 'companyDeptId', header: '所属机构' },
+    { col: 'E', width: 20, key: 'email', header: '邮箱' },
+    { col: 'F', width: 20, key: 'tel', header: '电话' },
+    { col: 'G', width: 20, key: 'remark', header: '备注' },
+  ];
 
   /**
    * 创建用户
@@ -57,8 +70,6 @@ export class UserService {
       });
       return excludeFun(user, ['password']);
     } catch (error) {
-      console.log(error);
-
       throw new BadRequestException('用户创建失败');
     }
   }
@@ -68,15 +79,7 @@ export class UserService {
    * @param getListDto
    */
   async getList(findListDto: FindListDto) {
-    const {
-      pageSize,
-      current,
-      nickName,
-      userName,
-      tenantId,
-      companyDeptId,
-      status,
-    } = findListDto;
+    const { pageSize, current, nickName, userName, tenantId, companyDeptId, status } = findListDto;
     // 排除项目中已有的用户ID
     let userIds = [];
     if (tenantId) {
@@ -109,7 +112,7 @@ export class UserService {
       where: condition,
       include: {
         tenants: { include: { tenant: true } },
-        CompanyDept: true,
+        CompanyDept: { where: { deleteflag: 0 } },
       },
     });
 
@@ -203,6 +206,32 @@ export class UserService {
     await this.prisma.user.update({
       where: { id },
       data: { deleteflag: 1 },
+    });
+  }
+
+  /**
+   * Excel导入用户
+   * @param file
+   */
+  async importUserFile(file: Express.Multer.File) {
+    console.log(file);
+    // 1. 解析表格，获取所有的行数据
+    const rows = await this.excelService.parseExcel(file, 'sys_user', 3)
+    console.log(rows);
+    // 2. 遍历每一行数据，创建
+  }
+
+  /**
+   * 导出用户模板
+   */
+  async exportUserTemplate() {
+
+    const fillInstructions = `填写说明: \n1. 账号：必填，不能重复。 \n2. 密码默认为123456。 \n3. 标*为必填字段`;
+    const select = [{ column: 'C', start: 3, end: 50, formulae: '"未知,男,女"' }];
+    return await this.excelService.exportTableHeader({
+      tableHeader: this.tableHeader,
+      fillInstructions: fillInstructions,
+      select
     });
   }
 }

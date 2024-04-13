@@ -1,15 +1,15 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { {{uppermoduleName}}Service } from './{{moduleName}}.service';
 import { Create{{uppermoduleName}}Dto } from './dto/create-{{moduleName}}.dto';
 import { Update{{uppermoduleName}}Dto } from './dto/update-{{moduleName}}.dto';
 import { Find{{uppermoduleName}}ListDto } from './dto/find-{{moduleName}}-list.dto';
+import { generateParseIntPipe } from 'src/common/pipe/generateParseIntPipe';
 import { Result } from 'src/common/result';
-import { Auth } from '../auth/decorators/auth.decorators';
+import { Auth } from 'src/sys/auth/decorators/auth.decorators';
+import { OpLog } from 'src/common/decorators/recordLog.dectorator';
 import {
   ApiBearerAuth,
-  ApiBody,
   ApiOperation,
-  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -23,6 +23,7 @@ export class {{uppermoduleName}}Controller {
   @Post('/create')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('创建{{busName}}')
   async create(@Body() create{{uppermoduleName}}Dto: Create{{uppermoduleName}}Dto) {
     const data = await this.{{moduleName}}Service.create(create{{uppermoduleName}}Dto);
     return Result.success(data, '创建{{busName}}成功');
@@ -51,6 +52,7 @@ export class {{uppermoduleName}}Controller {
   @Post('/update')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('更新{{busName}}')
   async update(@Body() update{{uppermoduleName}}Dto: Update{{uppermoduleName}}Dto) {
     const data = await this.{{moduleName}}Service.update(update{{uppermoduleName}}Dto);
     return Result.success(data, '更新{{busName}}成功');
@@ -61,6 +63,7 @@ export class {{uppermoduleName}}Controller {
   @Post('/delete')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('删除{{busName}}')
   async remove(@Body('id', generateParseIntPipe('id')) id: number) {
     const data = await this.{{moduleName}}Service.remove(id);
     return Result.success(data, '删除{{busName}}成功');
@@ -71,6 +74,7 @@ export class {{uppermoduleName}}Controller {
   @Post('/batchDelete')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('批量删除{{busName}}')
   async batchDelete(@Body('ids') ids: number[]) {
     const data = await this.{{moduleName}}Service.batchDelete(ids);
     return Result.success(data, '删除{{busName}}成功');

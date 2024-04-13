@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { RoleService } from './role.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import {
@@ -11,6 +19,10 @@ import {
 import { Auth } from '../auth/decorators/auth.decorators';
 import { Result } from 'src/common/result';
 import { FindRoleListDto } from './dto/find-role-list.dto';
+import { generateParseIntPipe } from 'src/common/pipe/generateParseIntPipe';
+import { UpdateRoleDto } from './dto/update-role.dto';
+import { RoleMenuDto } from './dto/role-menu.dto';
+import { OpLog } from 'src/common/decorators/recordLog.dectorator';
 
 @ApiTags('角色管理')
 @Controller('role')
@@ -22,6 +34,7 @@ export class RoleController {
   @ApiBearerAuth()
   @Post('/create')
   @Auth()
+  @OpLog('创建角色')
   async create(@Body() createRoleDto: CreateRoleDto) {
     return Result.success(
       await this.roleService.create(createRoleDto),
@@ -50,5 +63,58 @@ export class RoleController {
   async getList(@Query() findRoleListDto: FindRoleListDto) {
     const data = await this.roleService.getList(findRoleListDto);
     return Result.success(data);
+  }
+
+  @ApiOperation({ summary: '根据ID查询角色' })
+  @ApiBearerAuth()
+  @Get('/get')
+  @Auth()
+  async findOne(@Query('id', generateParseIntPipe('id')) id: number) {
+    const data = await this.roleService.findOne(id);
+    return Result.success(data, '查询角色成功');
+  }
+
+  @ApiOperation({ summary: '更新角色' })
+  @ApiBearerAuth()
+  @Post('/update')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  @OpLog('更新角色')
+  async update(@Body() updateRoleDto: UpdateRoleDto) {
+    const data = await this.roleService.update(updateRoleDto);
+    return Result.success(data, '更新角色成功');
+  }
+
+  @ApiOperation({ summary: '删除角色' })
+  @ApiBearerAuth()
+  @Post('/delete')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  @OpLog('删除角色')
+  async remove(@Body('id', generateParseIntPipe('id')) id: number) {
+    const data = await this.roleService.remove(id);
+    return Result.success(data, '删除角色成功');
+  }
+
+  @ApiOperation({ summary: '批量删除角色' })
+  @ApiBearerAuth()
+  @Post('/batchDelete')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  @OpLog('批量删除角色')
+  async batchDelete(@Body('ids') ids: number[]) {
+    const data = await this.roleService.batchDelete(ids);
+    return Result.success(data, '删除角色成功');
+  }
+
+  @ApiOperation({ summary: '角色关联菜单' })
+  @ApiBearerAuth()
+  @Post('/menu')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  @OpLog('角色关联菜单')
+  async roleMenu(@Body() roleMenuDto: RoleMenuDto) {
+    const data = await this.roleService.roleMenu(roleMenuDto);
+    return Result.success(data, '角色关联菜单成功');
   }
 }

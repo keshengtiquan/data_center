@@ -16,6 +16,16 @@ import { DictModule } from './sys/dict/dict.module';
 import { RedisModule } from './redis/redis.module';
 import { GenerateModule } from './generate/generate.module';
 import { TestModule } from './sys/test/test.module';
+import { DivisionModule } from './dc/division/division.module';
+import { ListModule } from './dc/list/list.module';
+import { WorkPlaceModule } from './dc/work-place/workPlace.module';
+import { LogModule } from './log/log.module';
+import { DeptModule } from './dc/dept/dept.module';
+import { SectorModule } from './dc/sector/sector.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TaskModule } from './task/task.module';
+import { SysTaskModule } from './sys/sys-task/sys-task.module';
+import { ExcelModule } from './excel/excel.module';
 
 @Module({
   imports: [
@@ -43,6 +53,7 @@ import { TestModule } from './sys/test/test.module';
       },
       inject: [ConfigService],
     }),
+    ScheduleModule.forRoot(),
     UserModule,
     PrismaModule,
     AuthModule,
@@ -55,6 +66,15 @@ import { TestModule } from './sys/test/test.module';
     RedisModule,
     GenerateModule,
     TestModule,
+    DivisionModule,
+    ListModule,
+    WorkPlaceModule,
+    LogModule,
+    DeptModule,
+    SectorModule,
+    TaskModule,
+    SysTaskModule.forRoot(),
+    ExcelModule
   ],
   controllers: [],
   providers: [

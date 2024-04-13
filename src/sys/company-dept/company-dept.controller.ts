@@ -14,6 +14,7 @@ import { Result } from 'src/common/result';
 import { FindTreeNodeDto } from './dto/company-dept.dto';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UpdateCompanyDeptDto } from './dto/update-company-dept.dto';
+import { OpLog } from 'src/common/decorators/recordLog.dectorator';
 
 @ApiTags('组织机构')
 @Controller('company-dept')
@@ -26,6 +27,7 @@ export class CompanyDeptController {
   @Post('/create')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('创建组织机构')
   async create(@Body() createCompanyDeptDto: CreateCompanyDeptDto) {
     const data = await this.companyDeptService.create(createCompanyDeptDto);
     return Result.success(data, '创建成功');
@@ -54,6 +56,7 @@ export class CompanyDeptController {
   @ApiBearerAuth()
   @Post('/delete')
   @Auth()
+  @OpLog('删除组织机构')
   async deleteCompanyDept(@Body('id') id: number) {
     const data = await this.companyDeptService.deleteCompanyDept(id);
     return Result.success(data, '删除成功');
@@ -65,12 +68,13 @@ export class CompanyDeptController {
   @Post('/batchDelete')
   @HttpCode(HttpStatus.OK)
   @Auth()
+  @OpLog('批量删除组织机构')
   async batchDelete(@Body('ids') ids: number[]) {
     const data = await this.companyDeptService.batchDelete(ids);
     return Result.success(data, '删除成功');
   }
 
-  @ApiOperation({ summary: '修改组织机构' })
+  @ApiOperation({ summary: '查询组织机构' })
   @ApiBearerAuth()
   @Get('/get')
   @Auth()
@@ -85,6 +89,7 @@ export class CompanyDeptController {
   @Post('/update')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('修改组织机构')
   async updateCompanyDept(@Body() updateCompanyDeptDto: UpdateCompanyDeptDto) {
     const data = await this.companyDeptService.updateCompanyDept(
       updateCompanyDeptDto,

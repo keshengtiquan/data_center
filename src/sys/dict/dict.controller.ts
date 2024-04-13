@@ -21,6 +21,7 @@ import { Result } from 'src/common/result';
 import { FindDictListDto } from './dto/dict.dto';
 import { UpdateDictDto } from './dto/update-dict.dto';
 import { generateParseIntPipe } from 'src/common/pipe/generateParseIntPipe';
+import { OpLog } from 'src/common/decorators/recordLog.dectorator';
 
 @ApiTags('字典管理')
 @Controller('dict')
@@ -33,6 +34,7 @@ export class DictController {
   @Post('/create')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('创建字典')
   async create(@Body() createDictDto: CreateDictDto) {
     const data = await this.dictService.create(createDictDto);
     return Result.success(data);
@@ -71,6 +73,7 @@ export class DictController {
   @Post('/update')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('修改字典')
   async update(@Body() updateDictDto: UpdateDictDto) {
     const data = await this.dictService.update(updateDictDto);
     return Result.success(data);

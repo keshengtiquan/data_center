@@ -16,6 +16,7 @@ import { Auth } from '../auth/decorators/auth.decorators';
 import { Result } from 'src/common/result';
 import { ForbiddenMenuDto } from './dto/forbidden-menu.dto';
 import { UtcToLocalInterceptor } from 'src/common/interceptor/utc2Local.interceptor';
+import { OpLog } from 'src/common/decorators/recordLog.dectorator';
 
 @ApiTags('菜单管理')
 @Controller('menu')
@@ -27,6 +28,7 @@ export class MenuController {
   @ApiBearerAuth()
   @Post('/create')
   @Auth()
+  @OpLog('创建菜单')
   async create(@Body() createMenuDto: CreateMenuDto) {
     return Result.success(await this.menuService.create(createMenuDto));
   }
@@ -61,6 +63,7 @@ export class MenuController {
   @ApiBearerAuth()
   @Post('/update')
   @Auth()
+  @OpLog('更新菜单')
   async updateMenu(@Body() updateMenuDto: UpdateMenuDto) {
     return Result.success(
       await this.menuService.update(updateMenuDto),
@@ -82,6 +85,7 @@ export class MenuController {
   @Post('/forbidden')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('禁用菜单')
   async forbiddenMenuById(@Body() forbiddenMenuDto: ForbiddenMenuDto) {
     return Result.success(
       await this.menuService.forbidden(forbiddenMenuDto),
@@ -94,6 +98,7 @@ export class MenuController {
   @ApiBearerAuth()
   @Post('/delete')
   @Auth()
+  @OpLog('删除菜单')
   async deleteMenuById(@Body('id') id: number) {
     return Result.success(await this.menuService.delete(id), '删除成功');
   }

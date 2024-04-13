@@ -10,6 +10,8 @@ import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ClsService } from 'nestjs-cls';
 import { FindRoleListDto } from './dto/find-role-list.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
+import { RoleMenuDto } from './dto/role-menu.dto';
 
 @Injectable()
 export class RoleService {
@@ -20,6 +22,7 @@ export class RoleService {
 
   async create(createRoleDto: CreateRoleDto) {
     const userInfo = this.cls.get('headers').user as User;
+    const headers = this.cls.get('headers').headers as Headers;
     const findRoleName = await this.prisma.role.findFirst({
       where: {
         roleName: createRoleDto.roleName,
@@ -46,6 +49,7 @@ export class RoleService {
           roleKey: createRoleDto.roleKey,
           roleSort: createRoleDto.roleSort,
           remark: createRoleDto.remark,
+          tenantId: +headers['x-tenant-id'],
           createDept: userInfo.deptId,
           createBy: userInfo.userName,
           updateBy: userInfo.userName,
@@ -64,8 +68,10 @@ export class RoleService {
   async getList(findRoleListDto: FindRoleListDto) {
     const headers = this.cls.get('headers').headers as Headers;
 
-    const { current, pageSize } = findRoleListDto;
+    const { current, pageSize, roleName, status } = findRoleListDto;
     const condition = {
+      ...(roleName && { roleName: { contains: roleName } }),
+      ...(status && { status: status }),
       tenantId: +headers['x-tenant-id'],
       deleteflag: 0,
     };
@@ -80,5 +86,87 @@ export class RoleService {
       pageSize,
       total: await this.prisma.role.count({ where: condition }),
     };
+  }
+
+  /**
+   * 根据ID查询角色
+   * @param id
+   * @returns
+   */
+  async findOne(id: number) {
+    return await this.prisma.role.findUnique({
+      where: { id },
+    });
+  }
+
+  /**
+   * 更新角色
+   * @param id
+   * @returns
+   */
+  async update(updateRoleDto: UpdateRoleDto) {
+    const userInfo = this.cls.get('headers').user as User;
+    return await this.prisma.role.update({
+      where: { id: updateRoleDto.id },
+      data: {
+        remark: updateRoleDto.remark,
+        roleKey: updateRoleDto.roleKey,
+        roleName: updateRoleDto.roleName,
+        roleSort: updateRoleDto.roleSort,
+        updateBy: userInfo.userName,
+      },
+    });
+  }
+
+  /**
+   * 删除角色
+   * @param id
+   * @returns
+   */
+  async remove(id: number) {
+    return await this.prisma.role.update({
+      where: { id },
+      data: { deleteflag: 1 },
+    });
+  }
+  /**
+   * 批量删除角色
+   * @param ids
+   * @returns
+   */
+  async batchDelete(ids: number[]) {
+    return await this.prisma.role.updateMany({
+      where: { id: { in: ids } },
+      data: { deleteflag: 1 },
+    });
+  }
+
+  /**
+   * 关联菜单
+   * @param roleMenuDto
+   */
+  async roleMenu(roleMenuDto: RoleMenuDto) {
+    const { roleId, menuIds } = roleMenuDto;
+    const role = this.prisma.role.findUnique({
+      where: { id: roleId },
+    });
+    if (!role) {
+      throw new HttpException('角色不存在', HttpStatus.BAD_REQUEST);
+    }
+    try {
+      const createDate = menuIds.map((item) => {
+        return { menuId: item, roleId: roleId };
+      });
+      this.prisma.$transaction(async (prisma) => {
+        await prisma.menusOnRoles.deleteMany({
+          where: { roleId: roleId },
+        });
+        await prisma.menusOnRoles.createMany({
+          data: createDate,
+        });
+      });
+    } catch (error) {
+      
+    }
   }
 }

@@ -24,7 +24,7 @@ export class AuthService {
       where: {
         userName: loginDto.userName,
       },
-      include: { tenants: { include: { tenant: true } }, CompanyDept: true },
+      include: { tenants: { include: { tenant: true } }, CompanyDept: { where: { deleteflag: 0 } } },
     });
     if (!user) {
       throw new BadRequestException('用户不存在');
@@ -44,8 +44,7 @@ export class AuthService {
       const isAllTenantForbidden = user.tenants.every((tenant) => {
         return tenant.tenant.status === '1';
       });
-      if (isAllTenantForbidden)
-        throw new BadRequestException('当前用户所属项目已禁用，请联系管理员');
+      if (isAllTenantForbidden) throw new BadRequestException('当前用户所属项目已禁用，请联系管理员');
     }
 
     return {
@@ -55,8 +54,7 @@ export class AuthService {
           userName: user.userName,
         },
         {
-          expiresIn:
-            this.configService.get('jwt_access_token_expires_time') || '1d',
+          expiresIn: this.configService.get('jwt_access_token_expires_time') || '1d',
         },
       ),
       userInfo: excludeFun(user, ['password']),
@@ -71,8 +69,7 @@ export class AuthService {
           userName,
         },
         {
-          expiresIn:
-            this.configService.get('jwt_access_token_expires_time') || '1d',
+          expiresIn: this.configService.get('jwt_access_token_expires_time') || '1d',
         },
       ),
     };

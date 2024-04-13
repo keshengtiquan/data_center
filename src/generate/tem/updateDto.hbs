@@ -1,14 +1,14 @@
 import { Type } from 'class-transformer';
-import { IsOptional, IsNotEmpty } from 'class-validator';
+import { IsOptional, IsNotEmpty, IsInt } from 'class-validator';
 
 export class Update{{uppermoduleName}}Dto {
-  @IsNotEmpty({message: 'id不能为空'})
+  @IsNotEmpty({ message: 'id不能为空' })
   @Type(() => Number)
   @IsInt({ message: 'id应为整数' })
   id: number;
   {{#each editColumns}}
   {{#if this.whetherReq}}
-  @IsNotEmpty({message: '{{this.fieldName}}不能为空'})
+  @IsNotEmpty({ message: '{{this.fieldName}}不能为空' })
   {{else}}
   @IsOptional()
   {{/if}}
@@ -16,5 +16,6 @@ export class Update{{uppermoduleName}}Dto {
   @Type(() => Number)
   {{/if}}
   {{this.fieldName}}: {{this.fieldTsType}};
+  
   {{/each}}
 }

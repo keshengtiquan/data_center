@@ -16,6 +16,7 @@ import { Auth } from '../auth/decorators/auth.decorators';
 import { Result } from 'src/common/result';
 import { FindPackageListDto } from './dto/find-tenant-package.dto';
 import { UtcToLocalInterceptor } from 'src/common/interceptor/utc2Local.interceptor';
+import { OpLog } from 'src/common/decorators/recordLog.dectorator';
 
 @ApiTags('项目套餐管理')
 @Controller('package')
@@ -28,6 +29,7 @@ export class TenantPackageController {
   @Post('/create')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('创建项目套餐')
   async create(@Body() createTenantPackageDto: CreateTenantPackageDto) {
     return Result.success(
       await this.tenantPackageService.create(createTenantPackageDto),
@@ -58,6 +60,7 @@ export class TenantPackageController {
   @Post('/update')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('更新项目套餐')
   async update(@Body() updatePackageDto: UpdateTenantPackageDto) {
     return Result.success(
       await this.tenantPackageService.update(updatePackageDto),
@@ -71,6 +74,7 @@ export class TenantPackageController {
   @Post('/delete')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('删除项目套餐')
   async delete(@Body('id') id: number) {
     return Result.success(
       await this.tenantPackageService.delete(id),

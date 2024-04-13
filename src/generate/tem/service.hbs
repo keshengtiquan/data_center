@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Create{{uppermoduleName}}Dto } from './dto/create-{{moduleName}}.dto';
 import { Update{{uppermoduleName}}Dto } from './dto/update-{{moduleName}}.dto';
+import { Find{{uppermoduleName}}ListDto } from './dto/find-{{uppermoduleName}}-list.dto';
 import { User } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class {{uppermoduleName}}Service {
@@ -20,10 +23,10 @@ export class {{uppermoduleName}}Service {
     return await this.prisma.{{moduleName}}.create({
       data: {
         {{#each addColumns}}
-        {{this.fieldName}}: create{{uppermoduleName}}Dto.{{this.fieldName}},
+        {{this.fieldName}}: create{{../uppermoduleName}}Dto.{{this.fieldName}},
         {{/each}}
-        createdBy: userInfo.userName,
-        updatedBy: userInfo.userName,
+        createBy: userInfo.userName,
+        updateBy: userInfo.userName,
       }
     })
   }
@@ -82,9 +85,9 @@ export class {{uppermoduleName}}Service {
       where: {id: update{{uppermoduleName}}Dto.id},
       data: {
         {{#each editColumns}}
-        {{this.fieldName}}: update{{uppermoduleName}}Dto.{{this.fieldName}},
+        {{this.fieldName}}: update{{../uppermoduleName}}Dto.{{this.fieldName}},
         {{/each}}
-        updatedBy: userInfo.userName,
+        updateBy: userInfo.userName,
       }
     })
   }
@@ -96,8 +99,8 @@ export class {{uppermoduleName}}Service {
   */
   async remove(id: number) {
     return await this.prisma.{{moduleName}}.update({
-      where: {id},
-      data: {deleteflag: 1}
+      where: { id },
+      data: { deleteflag: 1 }
     })
   }
 
@@ -106,10 +109,10 @@ export class {{uppermoduleName}}Service {
   * @param ids
   * @returns
   */
-  async remove(ids: number[]) {
+  async batchDelete(ids: number[]) {
     return await this.prisma.{{moduleName}}.updateMany({
-      where: {id: { in: ids}},
-      data: {deleteflag: 1}
+      where: { id: { in: ids} },
+      data: { deleteflag: 1 }
     })
   }
 }

@@ -45,7 +45,7 @@ model User {
 model Role {
   id         Int            @id @default(autoincrement())
   tenantId   Int            @default(0) @map("tenant_id")
-  roleName   String         @map("role_name_cn") @db.VarChar(30)
+  roleName   String         @map("role_name") @db.VarChar(30)
   roleKey    String         @map("role_key") @db.VarChar(100)
   roleSort   Int            @map("role_sort")
   dataScope  String         @default("1") @map("data_scope") @db.Char(1)
@@ -65,10 +65,10 @@ model Role {
 
 // 用户角色关联表
 model UsersOnRoles {
-  user     User @relation(fields: [userId], references: [id])
-  userId   Int  @map("user_id")
-  role     Role @relation(fields: [roleId], references: [id])
-  roleId   Int  @map("role_id")
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @map("user_id")
+  role   Role @relation(fields: [roleId], references: [id])
+  roleId Int  @map("role_id")
 
   @@id([userId, roleId])
   @@map("sys_user_role")
@@ -183,9 +183,9 @@ model Menu {
 }
 
 model MenusOnRoles {
-  menus  Menu @relation(fields: [menuId], references: [id])
+  menu   Menu @relation(fields: [menuId], references: [id])
   menuId Int  @map("menu_id")
-  roles  Role @relation(fields: [roleId], references: [id])
+  role   Role @relation(fields: [roleId], references: [id])
   roleId Int  @map("role_id")
 
   @@id([menuId, roleId])
@@ -276,4 +276,165 @@ model GenConfig {
   deleteflag   Int      @default(0) @map("delete_flag")
 
   @@map("gen_config")
+}
+
+model Division {
+  id           Int      @id @default(autoincrement())
+  tenantId     Int      @map("tenant_id")
+  createDept   Int?     @map("create_dept")
+  parentId     Int      @default(0) @map("parent_id")
+  divisionName String   @map("division_name")
+  divisionType String   @map("division_type")
+  divisionCode String?  @map("division_code")
+  parentNames  String?  @map("parent_names")
+  createBy     String?  @map("create_by") @db.VarChar(255)
+  updateBy     String?  @map("update_by") @db.VarChar(255)
+  createTime   DateTime @default(now()) @map("create_time")
+  updateTime   DateTime @updatedAt @map("update_time")
+  deleteflag   Int      @default(0) @map("delete_flag")
+  lists        List[]
+
+  @@map("dc_division")
+}
+
+model List {
+  id                 Int       @id @default(autoincrement())
+  tenantId           Int       @map("tenant_id")
+  createDept         Int?      @map("create_dept")
+  parentId           Int       @default(0) @map("parent_id")
+  serialNumber       Int?      @map("serial_number")
+  listCode           String?   @map("list_code")
+  listName           String    @map("list_name")
+  listCharacteristic String?   @map("list_characteristic")
+  unit               String
+  quantities         Float
+  unitPrice          Decimal   @map("unit_price") @db.Decimal(18, 2)
+  combinedPrice      Decimal   @map("combined_price") @db.Decimal(18, 2)
+  sectionalEntry     String?   @map("sectional_entry")
+  currentSection     Int?      @map("current_section")
+  isFocusList        Boolean?  @map("is_focus_list")
+  designQuantities   Float?    @map("design_quantities")
+  createBy           String?   @map("create_by") @db.VarChar(255)
+  updateBy           String?   @map("update_by") @db.VarChar(255)
+  createTime         DateTime  @default(now()) @map("create_time")
+  updateTime         DateTime  @updatedAt @map("update_time")
+  deleteflag         Int       @default(0) @map("delete_flag")
+  divisions          Division? @relation(fields: [currentSection], references: [id])
+
+  @@map("dc_list")
+}
+
+model WorkPlace {
+  id            Int             @id @default(autoincrement())
+  tenantId      Int             @map("tenant_id")
+  createDept    Int?            @map("create_dept")
+  workPlaceCode String?         @unique @map("work_place_code")
+  workPlaceName String?         @map("work_place_name")
+  workPlaceType String?         @map("work_place_type")
+  sortNumber    Int             @default(10) @map("sort_number")
+  createBy      String?         @map("create_by") @db.VarChar(255)
+  updateBy      String?         @map("update_by") @db.VarChar(255)
+  createTime    DateTime        @default(now()) @map("create_time")
+  updateTime    DateTime        @updatedAt @map("update_time")
+  deleteflag    Int             @default(0) @map("delete_flag")
+  WorkPlaceList WorkPlaceList[]
+
+  @@map("dc_work_place")
+}
+
+model WorkPlaceList {
+  id              Int       @id @default(autoincrement())
+  tenantId        Int       @map("tenant_id")
+  createDept      Int?      @map("create_dept")
+  allQuantities   Float?    @map("all_quantities")
+  leftQuantities  Float?    @map("left_quantities")
+  rightQuantities Float?    @map("right_quantities")
+  workPlaceId     Int       @map("work_place_id")
+  workPlaces      WorkPlace @relation(fields: [workPlaceId], references: [id])
+  listId          Int       @map("list_id")
+  createBy        String?   @map("create_by") @db.VarChar(255)
+  updateBy        String?   @map("update_by") @db.VarChar(255)
+  createTime      DateTime  @default(now()) @map("create_time")
+  updateTime      DateTime  @updatedAt @map("update_time")
+  deleteflag      Int       @default(0) @map("delete_flag")
+
+  @@map("dc_work_place_list")
+}
+
+model Log {
+  id         Int     @id @default(autoincrement())
+  tenantId   Int?    @map("tenant_id")
+  category   String? @map("category") //日志分类
+  name       String? // 日志名称
+  exeStatus  String? @map("exe_status") // 执行状态
+  exeMessage String? @map("exe_message") @db.LongText // 具体消息
+  opIp       String? @map("op_ip") // 操作IP
+  opAddress  String? @map("op_address") // 操作地址
+  opBrowser  String? @map("op_browser") // 浏览器类型
+  opOs       String? @map("op_os") // 操作系统类型
+  methodName String? @map("method_name") // 方法名称
+  className  String? @map("class_name") // 类名称
+  reqMethod  String? @map("req_method") // 请求方法
+  reqUrl     String? @map("req_url") @db.LongText // 请求URL
+  paramJson  String? @map("param_json") @db.LongText // 请求参数
+  resultJson String? @map("result_json") @db.LongText // 返回结果
+  opTime     String? @map("op_time") // 操作时间
+  opUser     String? @map("op_user") // 操作人
+
+  @@map("dev_log")
+}
+
+model Dept {
+  id         Int      @id @default(autoincrement())
+  tenantId   Int?     @map("tenant_id")
+  parentId   Int?     @map("parent_id")
+  deptName   String   @map("dept_name") @db.VarChar(30)
+  deptType   String?  @default("") @map("dept_type") @db.Char(50)
+  sortNumber Int?     @default(10) @map("sort_number")
+  createBy   String?  @map("create_by") @db.VarChar(255)
+  updateBy   String?  @map("update_by") @db.VarChar(255)
+  createTime DateTime @default(now()) @map("create_time")
+  updateTime DateTime @updatedAt @map("update_time")
+  deleteflag Int      @default(0) @map("delete_flag")
+  leaderId   Int?     @map("leader_id")
+  Sector     Sector[]
+
+  @@map("dc_dept")
+}
+
+model Sector {
+  id         Int      @id @default(autoincrement())
+  tenantId   Int?     @map("tenant_id")
+  sectorName String   @map("sector_name") @db.VarChar(30)
+  deptId     Int?     @map("dept_id")
+  Dept       Dept?    @relation(fields: [deptId], references: [id])
+  workPlaces String?  @map("work_places") @db.VarChar(255) //负责的工点
+  divisions  String?  @map("divisions") @db.VarChar(255) //负责的分部分项
+  sortNumber Int?     @default(10) @map("sort_number")
+  createBy   String?  @map("create_by") @db.VarChar(255)
+  updateBy   String?  @map("update_by") @db.VarChar(255)
+  createTime DateTime @default(now()) @map("create_time")
+  updateTime DateTime @updatedAt @map("update_time")
+  deleteflag Int      @default(0) @map("delete_flag")
+
+  @@map("dc_sector")
+}
+
+model Task {
+  id              Int      @id @default(autoincrement())
+  taskName        String   @map("task_name") @db.VarChar(255)
+  taskType        String?  @map("task_type")
+  cronExpression  String   @map("cron_expression")
+  actionClass     String   @map("action_class")
+  jobStatus       String   @default("0") @map("job_status")
+  operatingParams String?  @map("operating_params") @db.LongText
+  paramsType      String?  @map("params_type")
+  sortNumber      Int?     @map("sort_number")
+  createBy        String?  @map("create_by") @db.VarChar(255)
+  updateBy        String?  @map("update_by") @db.VarChar(255)
+  createTime      DateTime @default(now()) @map("create_time")
+  updateTime      DateTime @updatedAt @map("update_time")
+  deleteflag      Int      @default(0) @map("delete_flag")
+
+  @@map("dev_task")
 }

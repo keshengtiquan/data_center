@@ -95,7 +95,7 @@ export class GenerateController {
   @ApiOperation({ summary: '生成代码' })
   @ApiBearerAuth()
   @Get('/generateCode')
-  // @Auth()
+  @Auth()
   @Header('Content-Type', 'application/octet-stream')
   @Header('Content-Disposition', 'attachment')
   async generateTem(@Query('id') id: number, @Res() res: Response) {

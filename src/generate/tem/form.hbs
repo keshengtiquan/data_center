@@ -1,13 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useVModel } from '@vueuse/core';
-import { getCompanyDeptListApi } from '@/api/setting/company-dept/index'
-import TreeSelect from '@/components/tree-select/index.vue'
-import {CompanyDeptTypeEnum} from '@/enums/index'
-import { getUserListApi } from '@/api/setting/user/index'
-import Select from '@/components/select/index.vue'
-import DictSelect from '@/components/dict-select/index.vue'
-import DictRadio from '@/components/dict-radio/index.vue'
 
 type FormState = {
   {{#each addAndEditColumns}}

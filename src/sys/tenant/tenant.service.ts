@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ClsService } from 'nestjs-cls';
@@ -102,8 +97,7 @@ export class TenantService {
    */
   async getList(findTenantListDto: FindTenantListDto) {
     const userInfo = this.cls.get('headers').user;
-    const { current, pageSize, companyName, contactUserName, status } =
-      findTenantListDto;
+    const { current, pageSize, companyName, contactUserName, status } = findTenantListDto;
 
     const condition = {
       ...(companyName && { companyName: { contains: companyName } }),
@@ -120,7 +114,7 @@ export class TenantService {
 
     const list = await this.prisma.tenant.findMany({
       where: condition,
-      include: { tenantPackage: true, companyDept: true },
+      include: { tenantPackage: true, companyDept: { where: { deleteflag: 0 } } },
       skip: (current - 1) * pageSize,
       take: pageSize,
     });
@@ -143,21 +137,12 @@ export class TenantService {
     });
 
     tenantListVo.results = list.map((item) => {
-      const { manager, chiefEngineer, areaLeader, safetyDirector, ...other } =
-        item;
+      const { manager, chiefEngineer, areaLeader, safetyDirector, ...other } = item;
       const obj = {
-        manager: manager
-          ? users.find((user) => user.id === manager).nickName
-          : null,
-        chiefEngineer: chiefEngineer
-          ? users.find((user) => user.id === chiefEngineer).nickName
-          : null,
-        safetyDirector: safetyDirector
-          ? users.find((user) => user.id === safetyDirector).nickName
-          : null,
-        areaLeader: areaLeader
-          ? users.find((user) => user.id === areaLeader).nickName
-          : null,
+        manager: manager ? users.find((user) => user.id === manager).nickName : null,
+        chiefEngineer: chiefEngineer ? users.find((user) => user.id === chiefEngineer).nickName : null,
+        safetyDirector: safetyDirector ? users.find((user) => user.id === safetyDirector).nickName : null,
+        areaLeader: areaLeader ? users.find((user) => user.id === areaLeader).nickName : null,
         ...other,
       };
       return obj;
@@ -273,9 +258,7 @@ export class TenantService {
         areaLeader: saveTenantInfoDto.areaLeader,
         projectType: saveTenantInfoDto.projectType,
         projectProfessional:
-          saveTenantInfoDto.projectProfessional.length > 0
-            ? JSON.stringify(saveTenantInfoDto.projectProfessional)
-            : '',
+          saveTenantInfoDto.projectProfessional.length > 0 ? JSON.stringify(saveTenantInfoDto.projectProfessional) : '',
       },
     });
 
@@ -287,9 +270,7 @@ export class TenantService {
       },
     });
     const filterUser = users.filter(
-      (item) =>
-        item.user.userType === USER_TYPE.PROJECT_ADMIN &&
-        !item.user.companyDeptId,
+      (item) => item.user.userType === USER_TYPE.PROJECT_ADMIN && !item.user.companyDeptId,
     );
     if (filterUser.length > 0) {
       await this.prisma.user.updateMany({
@@ -313,11 +294,7 @@ export class TenantService {
     });
 
     if (data) {
-      const personnel = [
-        data.manager,
-        data.chiefEngineer,
-        data.safetyDirector,
-      ].filter((id) => id);
+      const personnel = [data.manager, data.chiefEngineer, data.safetyDirector].filter((id) => id);
       if (personnel.length === 0) return data;
       const personelData = await this.prisma.user.findMany({
         where: {
@@ -334,12 +311,8 @@ export class TenantService {
         );
       });
 
-      data.projectNature = data.projectNature
-        ? JSON.parse(data.projectNature)
-        : '';
-      data.projectProfessional = data.projectProfessional
-        ? JSON.parse(data.projectProfessional)
-        : '';
+      data.projectNature = data.projectNature ? JSON.parse(data.projectNature) : '';
+      data.projectProfessional = data.projectProfessional ? JSON.parse(data.projectProfessional) : '';
       data.manager = personnelMap.get(data.manager).nickName;
       data.chiefEngineer = personnelMap.get(data.chiefEngineer).nickName;
       data.safetyDirector = personnelMap.get(data.safetyDirector).nickName;
@@ -359,7 +332,7 @@ export class TenantService {
       where: { tenantId: tenantId, user: { deleteflag: 0 } },
       include: {
         user: {
-          include: { CompanyDept: true },
+          include: { CompanyDept: { where: { deleteflag: 0 } } },
         },
       },
       skip: (current - 1) * pageSize,
@@ -395,9 +368,7 @@ export class TenantService {
         const user = users.find((user) => user.id === item);
         nickName.push(user.nickName);
       });
-      throw new BadRequestException(
-        `【${nickName.join()}】已经是该项目成员，请不要重复添加！`,
-      );
+      throw new BadRequestException(`【${nickName.join()}】已经是该项目成员，请不要重复添加！`);
     }
 
     const createdUser = await this.prisma.tenantsOnUsers.createMany({

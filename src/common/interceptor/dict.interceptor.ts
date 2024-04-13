@@ -1,10 +1,4 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Inject,
-  Injectable,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Inject, Injectable, NestInterceptor } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable, mergeMap } from 'rxjs';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -17,46 +11,39 @@ export class DictInterceptor implements NestInterceptor {
   private readonly prisma: PrismaService;
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const dictConvertField = this.reflector.get(
-      'dictConvertField',
-      context.getHandler(),
-    );
+    const dictConvertField = this.reflector.get('dictConvertField', context.getHandler());
     if (!dictConvertField) {
       return next.handle();
     }
 
     return next.handle().pipe(
       mergeMap(async (data) => {
-        if (data.data.results.length > 0) {
-          const updatedData = await this.processData(
-            data.data.results,
-            dictConvertField,
-          );
-          data.data.results = updatedData;
-          return data;
+        if (data.data.results) {
+          if (data.data.results.length > 0) {
+            const updatedData = await this.processData(data.data.results, dictConvertField);
+            data.data.results = updatedData;
+            return data;
+          } else {
+            return data;
+          }
         } else {
+          const updatedData = await this.processData(data.data, dictConvertField);
+          data.data = updatedData;
           return data;
         }
       }),
     );
   }
 
-  private async processData(
-    data: any[],
-    dictConvertField: { dictType: string; field: string; isArray: boolean }[],
-  ) {
+  private async processData(data: any[], dictConvertField: { dictType: string; field: string; isArray: boolean }[]) {
     const dictList = await this.prisma.dict.findMany();
     const dictTree = handleTree(dictList);
-    console.log(dictConvertField);
 
     // 字典值转换为字典标签
-    const updateNodeUsernames = (node) => {
+    const updateNodeDictLabels = (node) => {
       dictConvertField.forEach((item) => {
         if (node[item.field]) {
-          const dict = dictTree.find(
-            (dict) => dict.dictValue === item.dictType,
-          );
-          console.log(typeof node[item.field]);
+          const dict = dictTree.find((dict) => dict.dictValue === item.dictType);
           //字典下拉为多选时是个数组， 要在service里提前转数组
           if (item.isArray) {
             let arr: string[] = [];
@@ -67,28 +54,25 @@ export class DictInterceptor implements NestInterceptor {
               arr = node[item.field];
             }
             arr.forEach((value) => {
-              const label = dict.children.find(
-                (child) => child.dictValue === value,
-              );
+              const label = dict.children.find((child) => child.dictValue === value);
               if (label) {
                 labelArr.push(label.dictLabel);
               }
             });
             node[item.field] = labelArr;
           } else {
-            node[item.field] = dict.children.find(
-              (child) => child.dictValue === node[item.field],
-            )
-              ? dict.children.find(
-                  (child) => child.dictValue === node[item.field],
-                ).dictLabel
+            node[item.field] = dict.children.find((child) => child.dictValue === node[item.field])
+              ? dict.children.find((child) => child.dictValue === node[item.field]).dictLabel
               : '';
           }
         }
       });
+      if (node.children && node.children.length > 0) {
+        node.children = node.children.map(updateNodeDictLabels);
+      }
       return node;
     };
 
-    return data.map(updateNodeUsernames);
+    return data.map(updateNodeDictLabels);
   }
 }

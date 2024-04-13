@@ -32,6 +32,7 @@ import { DeleteTenantUserDto } from './dto/delete-tenant-user.dto';
 import { UtcToLocalInterceptor } from 'src/common/interceptor/utc2Local.interceptor';
 import { UserNameToIdPipe } from 'src/common/pipe/userNameToIdPipe';
 import { DictTransform } from 'src/common/decorators/dict.dectorator';
+import { OpLog } from 'src/common/decorators/recordLog.dectorator';
 
 @ApiTags('项目管理')
 @Controller('tenant')
@@ -44,6 +45,7 @@ export class TenantController {
   @Post('/create')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('创建项目')
   async create(@Body() createTenantDto: CreateTenantDto) {
     return Result.success(
       await this.tenantService.create(createTenantDto),
@@ -78,6 +80,7 @@ export class TenantController {
   @Post('/forbidden')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('禁用/启用项目')
   async forbiddenTenant(@Body() forbiddenTenantDto: ForbiddenTenantDto) {
     const data = await this.tenantService.forbidden(forbiddenTenantDto);
     return Result.success(
@@ -102,6 +105,7 @@ export class TenantController {
   @Post('/update')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('更新项目')
   async updateTenant(@Body() updateTenantDto: UpdateTenantDto) {
     const data = await this.tenantService.updateTenant(updateTenantDto);
     return Result.success(data, '更新项目成功');
@@ -113,6 +117,7 @@ export class TenantController {
   @Post('/delete')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('删除项目')
   async deleteTenant(@Body('id') id: number) {
     const data = await this.tenantService.deleteTenant(id);
     return Result.success(data, '删除项目成功');
@@ -127,6 +132,7 @@ export class TenantController {
   @UsePipes(
     new UserNameToIdPipe(['manager', 'chiefEngineer', 'safetyDirector']),
   )
+  @OpLog('保存项目信息')
   async saveTenantInfo(@Body() saveTenantInfoDto: SaveTenantInfoDto) {
     const data = await this.tenantService.saveTenantInfo(saveTenantInfoDto);
     return Result.success(data, '保存项目信息成功');
@@ -169,6 +175,7 @@ export class TenantController {
   @Post('/add/tenantUser')
   @Auth()
   @HttpCode(HttpStatus.OK)
+  @OpLog('添加项目用户')
   async addTenantUser(@Body() addTenantUserDto: AddTenantUserDto) {
     const data = await this.tenantService.addTenantUser(addTenantUserDto);
     return Result.success(data, '添加项目用户成功');
@@ -180,6 +187,7 @@ export class TenantController {
   @Auth()
   @Post('/delete/tenentUser')
   @HttpCode(HttpStatus.OK)
+  @OpLog('删除项目用户')
   async deleteTenantUser(@Body() deleteTenantUserDto: DeleteTenantUserDto) {
     const data = await this.tenantService.deleteTenantUser(deleteTenantUserDto);
     return Result.success(data, '删除项目用户成功');
