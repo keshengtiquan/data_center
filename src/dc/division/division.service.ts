@@ -8,6 +8,7 @@ import { handleTree } from 'src/utils/tree';
 import { FindDivisionListDto } from './dto/find-division-list.dto';
 import { AddListDto } from './dto/add-list-dto';
 import Decimal from 'decimal.js';
+import { ExcelService } from 'src/excel/excel.service';
 
 @Injectable()
 export class DivisionService {
@@ -15,6 +16,16 @@ export class DivisionService {
   private prisma: PrismaService;
   @Inject(ClsService)
   private readonly cls: ClsService;
+  @Inject(ExcelService)
+  private readonly excelService: ExcelService;
+
+  private excelTableHeaders = [
+    { col: 'A', width: 20, key: 'unitProject', header: '单位工程' },
+    { col: 'B', width: 20, key: 'subunitProject', header: '子单位工程' },
+    { col: 'C', width: 20, key: 'segmentProject', header: '分部工程' },
+    { col: 'D', width: 20, key: 'subsegmentProject', header: '子分部工程' },
+    { col: 'E', width: 20, key: 'subitemProject', header: '分项工程' },
+  ];
 
   /**
    * 创建分部分项
@@ -33,7 +44,7 @@ export class DivisionService {
       },
     });
     if (findDivison) {
-      throw new BadRequestException('该分部分项已存在');
+      throw new BadRequestException(`【${createDivisionDto.divisionName}】该分部分项已存在`);
     }
     //先获取所有父节点的ID
     const divisions = await this.prisma.division.findMany({
@@ -120,8 +131,8 @@ export class DivisionService {
         division['outputValue'] = division.lists.reduce((acc, cur) => {
           return acc + Number(Decimal.mul(cur.quantities, cur.unitPrice));
         }, 0);
-      }else {
-        division['outputValue'] = 0
+      } else {
+        division['outputValue'] = 0;
       }
     });
 
@@ -255,5 +266,102 @@ export class DivisionService {
         sectionalEntry: null,
       },
     });
+  }
+
+  /**
+   * 导出模版
+   */
+  async exportDivisionTemplate() {
+    const fillInstructions = `填写说明: \n1. 不存在的分部分项等级可以不填。\n2. 导入文件时不要删除此说明`;
+    return await this.excelService.exportTableHeader({
+      tableHeader: this.excelTableHeaders,
+      fillInstructions: fillInstructions,
+      sheetName: '分部分项导入模版',
+    });
+  }
+
+  /**
+   * 导入模版
+   * @param file
+   */
+  async importDivision(file: Express.Multer.File) {
+    const rows = await this.excelService.parseExcel(file, '分部分项导入模版', 3, this.excelTableHeaders);
+    const insertRows = [];
+    const nodeMap = new Map();
+
+    function addDivision(name, type, parentId, rowNumber) {
+      if (!nodeMap.has(name)) {
+        insertRows.push({
+          divisionName: name,
+          divisionType: type,
+          parentId: parentId || 0,
+          rowNumber: rowNumber,
+        });
+        nodeMap.set(name, true);
+      }
+    }
+    rows.forEach((row, index) => {
+      const unitProject = row['unitProject'];
+      const subunitProject = row['subunitProject'];
+      const segmentProject = row['segmentProject'];
+      const subsegmentProject = row['subsegmentProject'];
+      const subitemProject = row['subitemProject'];
+
+      if (unitProject !== null) {
+        addDivision(unitProject, 'unitProject', 0, index);
+      }
+      if (subunitProject !== null) {
+        addDivision(subunitProject, 'subunitProject', unitProject, index);
+      }
+      if (segmentProject !== null) {
+        addDivision(segmentProject, 'segmentProject', subunitProject || unitProject, index);
+      }
+      if (subsegmentProject !== null) {
+        addDivision(subsegmentProject, 'subsegmentProject', segmentProject || subunitProject || unitProject, index);
+      }
+      if (subitemProject !== null) {
+        addDivision(
+          subitemProject,
+          'subitemProject',
+          subsegmentProject || segmentProject || subunitProject || unitProject,
+          index,
+        );
+      }
+    });
+    let errorCount = 0;
+    const errorDetail = [];
+    let successCount = 0;
+    for (const row of insertRows) {
+      if (row.parentId !== 0) {
+        const parent = await this.prisma.division.findFirst({
+          where: {
+            ...(row.parentId && { divisionName: row.parentId }),
+          },
+        });
+
+        row.parentId = parent ? parent.id : 0;
+      }
+
+      try {
+        await this.create(row);
+        // if (!['unitProject', 'subunitProject', 'segmentProject', 'subsegmentProject'].includes(row.divisionType)) {
+        // }
+        successCount++;
+      } catch (error) {
+        errorDetail.push({
+          index: row.rowNumber,
+          msg: error.message,
+          success: false,
+        });
+        errorCount++;
+      }
+    }
+
+    return {
+      totalCount: insertRows.length,
+      errorCount,
+      errorDetail,
+      successCount,
+    };
   }
 }

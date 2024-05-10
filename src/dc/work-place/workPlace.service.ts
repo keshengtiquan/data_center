@@ -1,4 +1,4 @@
-import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, Inject, HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
 import { CreateWorkPlaceDto } from './dto/create-workPlace.dto';
 import { UpdateWorkPlaceDto } from './dto/update-workPlace.dto';
 import { FindWorkPlaceListDto } from './dto/find-workPlace-list.dto';
@@ -9,6 +9,8 @@ import { FindWorkPlaceListListDto } from './dto/find-workPlaceList-list.dto';
 import Decimal from 'decimal.js';
 import { SaveWorkPlaceListQuantities } from './dto/save-workPlace-quantity.dto';
 import { FindWorkPlaceListCollectionDto } from './dto/find-workplace-list-collection.dto';
+import { ExcelService, HeaderDataType } from 'src/excel/excel.service';
+import { UpdateWorkPlacePositionDto } from './dto/update-workplace-positon.dto';
 
 @Injectable()
 export class WorkPlaceService {
@@ -16,6 +18,15 @@ export class WorkPlaceService {
   private prisma: PrismaService;
   @Inject(ClsService)
   private readonly cls: ClsService;
+  @Inject(ExcelService)
+  private readonly excelService: ExcelService;
+
+  private readonly excelTableHeader: HeaderDataType[] = [
+    { col: 'A', width: 10, key: 'sortNumber', header: '排序' },
+    { col: 'B', width: 20, key: 'workPlaceCode', header: '工点编码' },
+    { col: 'C', width: 25, key: 'workPlaceName', header: '工点名称*' },
+    { col: 'D', width: 30, key: 'workPlaceType', header: '工点类型' },
+  ];
 
   /**
    * 创建工点
@@ -37,17 +48,21 @@ export class WorkPlaceService {
       throw new HttpException('工点编码已存在', HttpStatus.BAD_REQUEST);
     }
 
-    return await this.prisma.workPlace.create({
-      data: {
-        tenantId: tenantId,
-        workPlaceCode: createWorkPlaceDto.workPlaceCode,
-        workPlaceName: createWorkPlaceDto.workPlaceName,
-        workPlaceType: createWorkPlaceDto.workPlaceType,
-        sortNumber: createWorkPlaceDto.sortNumber,
-        createBy: userInfo.userName,
-        updateBy: userInfo.userName,
-      },
-    });
+    try {
+      return await this.prisma.workPlace.create({
+        data: {
+          tenantId: tenantId,
+          workPlaceCode: createWorkPlaceDto.workPlaceCode,
+          workPlaceName: createWorkPlaceDto.workPlaceName,
+          workPlaceType: createWorkPlaceDto.workPlaceType,
+          sortNumber: createWorkPlaceDto.sortNumber,
+          createBy: userInfo.userName,
+          updateBy: userInfo.userName,
+        },
+      });
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
   }
 
   /**
@@ -350,5 +365,81 @@ export class WorkPlaceService {
       current,
       pageSize,
     };
+  }
+
+  /**
+   * 工点导入模版
+   */
+  async exportWorkPlaceTemplate() {
+    const fillInstructions = '填写说明: \n1. 带*的为必填项。' + '\n2. 导入文件时不要删除此说明 ';
+    const select = [{ column: 'D', start: 3, end: 50, formulae: '"车站,区间"' }];
+    return await this.excelService.exportTableHeader({
+      tableHeader: this.excelTableHeader,
+      sheetName: '工点导入模版',
+      fillInstructions,
+      select,
+    });
+  }
+
+  /**
+   * 导入工点
+   * @param file
+   */
+  async importWorkPlace(file: Express.Multer.File) {
+    const rows = await this.excelService.parseExcel(file, '工点导入模版', 3, this.excelTableHeader);
+    // console.log(rows);
+    let errorCount = 0;
+    const errorDetail = [];
+    let successCount = 0;
+
+    for (const row of rows) {
+      if (!row.workPlaceName) {
+        errorCount++;
+        errorDetail.push({
+          index: row.rowNumber,
+          msg: '工点名称不能为空',
+          success: false,
+        });
+      } else if (row.workPlaceType !== '车站' && row.workPlaceType !== '区间') {
+        errorCount++;
+        errorDetail.push({
+          index: row.rowNumber,
+          msg: '工点类型只能为车站或区间',
+          success: false,
+        });
+      } else {
+        try {
+          row.workPlaceType = row.workPlaceType === '车站' ? 'station' : 'section';
+          await this.create(row);
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          errorDetail.push({
+            index: row.rowNumber,
+            msg: error,
+            success: false,
+          });
+        }
+      }
+    }
+
+    return {
+      totalCount: rows.length,
+      errorCount,
+      errorDetail,
+      successCount,
+    };
+  }
+
+  async updatePosition(updateWorkPlacePositionDto: UpdateWorkPlacePositionDto[]) {
+    for (const workPlace of updateWorkPlacePositionDto) {
+      await this.prisma.workPlace.update({
+        where: { id: workPlace.id },
+        data: {
+          x: workPlace.x,
+          y: workPlace.y,
+        },
+      });
+    }
   }
 }

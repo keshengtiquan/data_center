@@ -4,9 +4,9 @@ import { ModuleRef } from '@nestjs/core';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { FindTaskListDto } from './dto/find-Task-list.dto';
 import { ClsService } from 'nestjs-cls';
 import { User } from '@prisma/client';
+import { FindTaskListDto } from './dto/find-task-list.dto';
 // import { LogService } from 'src/log/log.service';
 
 @Injectable()
@@ -28,6 +28,7 @@ export class SysTaskService implements OnModuleInit {
       },
     });
     const jobs = await this.taskService.getAllCronJobs();
+
     tasks.forEach(async (task) => {
       if (!jobs.has(task.taskName)) {
         this.createJob(task, task.jobStatus === '0' ? true : false);
@@ -89,7 +90,7 @@ export class SysTaskService implements OnModuleInit {
       where: {
         actionClass: createTaskDto.actionClass,
         deleteflag: 0,
-      }, 
+      },
     });
     if (find) {
       throw new BadRequestException('任务已存在，请不要重复配置');
@@ -155,11 +156,11 @@ export class SysTaskService implements OnModuleInit {
    */
   async update(updateTaskDto: UpdateTaskDto) {
     const userInfo = this.cls.get('headers').user as User;
-    await this.taskService.deleteCronJob(updateTaskDto.taskName)
-    this.createJob(updateTaskDto, true)
-    const jobs = await this.taskService.getAllCronJobs()
-    if(!jobs.has(updateTaskDto.taskName)){
-      throw new BadRequestException('任务更新失败')
+    await this.taskService.deleteCronJob(updateTaskDto.taskName);
+    this.createJob(updateTaskDto, updateTaskDto.jobStatus === '0' ? true : false);
+    const jobs = await this.taskService.getAllCronJobs();
+    if (!jobs.has(updateTaskDto.taskName)) {
+      throw new BadRequestException('任务更新失败');
     }
     return await this.prisma.task.update({
       where: { id: updateTaskDto.id },

@@ -14,13 +14,7 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Result } from 'src/common/result';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Auth } from '../auth/decorators/auth.decorators';
 import { FindListDto } from './dto/find-list.dto';
 import { ForbiddenUserDto } from './dto/forbidden-user.dto';
@@ -34,6 +28,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import * as path from 'path';
 import * as fs from 'fs';
 import { Response } from 'express';
+import { ExportUserDto } from './dto/export-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @ApiTags('用户管理')
 @Controller('user')
@@ -83,6 +80,16 @@ export class UserController {
   @UseInterceptors(UtcToLocalInterceptor)
   async getlist(@Query() findListDto: FindListDto) {
     const data = await this.userService.getList(findListDto);
+    return Result.success(data);
+  }
+
+  @ApiOperation({ summary: '查询项目用户' })
+  @ApiBearerAuth()
+  @Get('/tenant/getlist')
+  @Auth()
+  @UseInterceptors(UtcToLocalInterceptor)
+  async getTenantList(@Query() paginationDto: PaginationDto) {
+    const data = await this.userService.getTenantList(paginationDto);
     return Result.success(data);
   }
 
@@ -141,6 +148,25 @@ export class UserController {
     return Result.success(data, '导入清单成功');
   }
 
+  @ApiOperation({ summary: '导出清单' })
+  @ApiBearerAuth()
+  @Auth()
+  @Post('/export/list')
+  @HttpCode(HttpStatus.OK)
+  @Header('Content-Type', 'application/octet-stream')
+  @Header('Content-Disposition', 'attachment')
+  async exportUserList(@Body() exportUserDto: ExportUserDto, @Res() res: Response) {
+    const fileName = await this.userService.exportUserList(exportUserDto);
+
+    const filePath = path.join(process.cwd(), fileName);
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.on('end', () => {
+      // Optional: Delete the file after sending
+      fs.unlinkSync(filePath);
+    });
+    return fileStream.pipe(res);
+  }
+
   @ApiOperation({ summary: '导出模版' })
   @ApiBearerAuth()
   @Auth()
@@ -149,9 +175,8 @@ export class UserController {
   @Header('Content-Type', 'application/octet-stream')
   @Header('Content-Disposition', 'attachment')
   async exportUserTemplate(@Res() res: Response) {
-
     const fileName = await this.userService.exportUserTemplate();
-    
+
     const filePath = path.join(process.cwd(), fileName);
     const fileStream = fs.createReadStream(filePath);
     fileStream.on('end', () => {
@@ -159,5 +184,27 @@ export class UserController {
       fs.unlinkSync(filePath);
     });
     return fileStream.pipe(res);
+  }
+
+  @ApiOperation({ summary: '更新用户头像' })
+  @ApiBearerAuth()
+  @Auth()
+  @Post('/update/avatar')
+  @HttpCode(HttpStatus.OK)
+  @OpLog('更新用户头像')
+  async updateUserAvatat(@Body('avatar') avatar: string) {
+    const data = await this.userService.updateUserAvatat(avatar);
+    return Result.success(data, '用户头像更新成功');
+  }
+
+  @ApiOperation({ summary: '更新用户密码' })
+  @ApiBearerAuth()
+  @Auth()
+  @Post('/update/password')
+  @HttpCode(HttpStatus.OK)
+  @OpLog('更新用户密码')
+  async updateUserPassword(@Body() changePasswordDto: ChangePasswordDto) {
+    const data = await this.userService.updateUserPassword(changePasswordDto);
+    return Result.success(data, '用户密码更新成功');
   }
 }

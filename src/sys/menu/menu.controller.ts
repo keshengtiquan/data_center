@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-  Query,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, HttpCode, HttpStatus, Query, UseInterceptors } from '@nestjs/common';
 import { MenuService } from './menu.service';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
@@ -33,14 +24,21 @@ export class MenuController {
     return Result.success(await this.menuService.create(createMenuDto));
   }
 
+  @ApiOperation({ summary: '查询菜单列表' })
+  @Get('/getShortcutMenu')
+  @Auth()
+  async getShortcutMenu(@Query('module') module: string) {
+    const data = await this.menuService.getShortcutMenu(module);
+    return Result.success(data);
+  }
+
   @ApiOperation({ summary: '查询侧边菜单列表' })
   @Get('/getMenu')
   @Auth()
   @HttpCode(HttpStatus.OK)
   async getMenu(@Query('module') module: string) {
     const data = await this.menuService.getMenu(['C', 'M'], ['0'], module);
-    if (data.length === 0)
-      return Result.error('当前用户菜单列表为空, 请联系管理员');
+    if (data.length === 0) return Result.error('当前用户菜单列表为空, 请联系管理员');
     return Result.success(data);
   }
 
@@ -50,11 +48,7 @@ export class MenuController {
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(UtcToLocalInterceptor)
   async getMenuList(@Query('module') module: string) {
-    const data = await this.menuService.getMenu(
-      ['C', 'M', 'F'],
-      ['0', '1'],
-      module,
-    );
+    const data = await this.menuService.getMenu(['C', 'M', 'F'], ['0', '1'], module);
     return Result.success(data);
   }
 
@@ -65,10 +59,7 @@ export class MenuController {
   @Auth()
   @OpLog('更新菜单')
   async updateMenu(@Body() updateMenuDto: UpdateMenuDto) {
-    return Result.success(
-      await this.menuService.update(updateMenuDto),
-      '更新成功',
-    );
+    return Result.success(await this.menuService.update(updateMenuDto), '更新成功');
   }
 
   @ApiOperation({ summary: '根据ID查询菜单' })

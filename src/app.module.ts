@@ -26,6 +26,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TaskModule } from './task/task.module';
 import { SysTaskModule } from './sys/sys-task/sys-task.module';
 import { ExcelModule } from './excel/excel.module';
+import { PublicApiModule } from './sys/public-api/public-api.module';
+import { MinioModule } from './minio/minio.module';
+import { KnowledgeModule } from './knowledge/knowledge.module';
 
 @Module({
   imports: [
@@ -74,7 +77,10 @@ import { ExcelModule } from './excel/excel.module';
     SectorModule,
     TaskModule,
     SysTaskModule.forRoot(),
-    ExcelModule
+    ExcelModule,
+    PublicApiModule,
+    MinioModule,
+    KnowledgeModule,
   ],
   controllers: [],
   providers: [

@@ -117,6 +117,7 @@ model Tenant {
   projectType             String?          @map("project_type") // 项目类型
   projectProfessional     String?          @map("project_professional") // 项目专业
   contract                String?          @map("contract") //合同文件
+  contractUrl             String?          @map("contract_url") //合同文件url
 
   @@map("sys_tenant")
 }
@@ -338,6 +339,8 @@ model WorkPlace {
   updateTime    DateTime        @updatedAt @map("update_time")
   deleteflag    Int             @default(0) @map("delete_flag")
   WorkPlaceList WorkPlaceList[]
+  x             Int             @default(100)
+  y             Int             @default(100)
 
   @@map("dc_work_place")
 }
@@ -437,4 +440,23 @@ model Task {
   deleteflag      Int      @default(0) @map("delete_flag")
 
   @@map("dev_task")
+}
+
+model Konwledge {
+  id         Int      @id @default(autoincrement())
+  tenantId   Int?     @map("tenant_id") 
+  parentId   Int?     @map("parent_id") @default(0)
+  fileName   String   @map("file_name")
+  filePath   String?   @map("file_path")
+  fileSize   Int?     @map("file_size")
+  fileType   String?  @map("file_type")
+  isFolder   Boolean  @map("is_folder") @default(false)
+  sortNumber Int?     @map("sort_number")
+  createBy   String?  @map("create_by") @db.VarChar(255)
+  updateBy   String?  @map("update_by") @db.VarChar(255)
+  createTime DateTime @default(now()) @map("create_time")
+  updateTime DateTime @updatedAt @map("update_time")
+  deleteflag Int      @default(0) @map("delete_flag")
+
+  @@map("sys_knowledge")
 }

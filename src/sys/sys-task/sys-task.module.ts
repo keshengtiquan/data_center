@@ -13,9 +13,7 @@ export class SysTaskModule {
       module: SysTaskModule,
       imports: [TaskModule],
       controllers: [SysTaskController],
-      providers: [
-        SysTaskService,...taskProviders
-      ],
+      providers: [SysTaskService, ...taskProviders],
     };
   }
 }

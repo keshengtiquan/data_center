@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, UseInterceptors, UploadedFile, Header, Res } from '@nestjs/common';
 import { ListService } from './list.service';
 import { CreateListDto } from './dto/create-list.dto';
 import { UpdateListDto } from './dto/update-list.dto';
@@ -11,6 +11,10 @@ import { UtcToLocalInterceptor } from 'src/common/interceptor/utc2Local.intercep
 import { OpLog } from 'src/common/decorators/recordLog.dectorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileNameEncodePipe } from 'src/common/pipe/fileNameEncodePipe';
+import { Response } from 'express';
+import * as path from 'path';
+import * as fs from 'fs';
+import { ExportListDto } from './dto/export-list.dto';
 
 @ApiTags('清单管理')
 @Controller('list')
@@ -80,13 +84,51 @@ export class ListController {
     return Result.success(data, '删除清单成功');
   }
 
-  // @ApiOperation({ summary: '导入清单' })
-  // @ApiBearerAuth()
-  // @Auth()
-  // @Post('/import')
-  // @UseInterceptors(FileInterceptor('file'))
-  // async importListFile(@UploadedFile(new FileNameEncodePipe()) file: Express.Multer.File) {
-  //   const data = await this.listService.importListFile(file);
-  //   return Result.success(data, '导入清单成功');
-  // }
+  @ApiOperation({ summary: '导入清单模版' })
+  @ApiBearerAuth()
+  @Auth()
+  @Post('/import/template')
+  @HttpCode(HttpStatus.OK)
+  @Header('Content-Type', 'application/octet-stream')
+  @Header('Content-Disposition', 'attachment')
+  async importTemplate(@Res() res: Response) {
+    const fileName = await this.listService.exportListTemplate();
+
+    const filePath = path.join(process.cwd(), fileName);
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.on('end', () => {
+      // Optional: Delete the file after sending
+      fs.unlinkSync(filePath);
+    });
+    return fileStream.pipe(res);
+  }
+
+  @ApiOperation({ summary: '导入清单' })
+  @ApiBearerAuth()
+  @Auth()
+  @Post('/import')
+  @UseInterceptors(FileInterceptor('file'))
+  async importListFile(@UploadedFile(new FileNameEncodePipe()) file: Express.Multer.File) {
+    const data = await this.listService.importListFile(file);
+    return Result.success(data, '导入清单成功');
+  }
+
+  @ApiOperation({ summary: '导出清单' })
+  @ApiBearerAuth()
+  @Auth()
+  @Post('/export')
+  @HttpCode(HttpStatus.OK)
+  @Header('Content-Type', 'application/octet-stream')
+  @Header('Content-Disposition', 'attachment')
+  async exportListFile(@Body()exportListDto: ExportListDto,@Res() res: Response) {
+    const fileName = await this.listService.exportList(exportListDto);
+
+    const filePath = path.join(process.cwd(), fileName);
+    const fileStream = fs.createReadStream(filePath);
+    
+    fileStream.on('end', () => {
+      fs.unlinkSync(filePath);
+    });
+    return fileStream.pipe(res);
+  }
 }

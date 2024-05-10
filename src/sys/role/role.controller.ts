@@ -23,6 +23,8 @@ import { generateParseIntPipe } from 'src/common/pipe/generateParseIntPipe';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { RoleMenuDto } from './dto/role-menu.dto';
 import { OpLog } from 'src/common/decorators/recordLog.dectorator';
+import { AddUserDto } from './dto/add-user.dto';
+import { FindRoleUserDto } from './dto/find-role-user.dto';
 
 @ApiTags('角色管理')
 @Controller('role')
@@ -116,5 +118,34 @@ export class RoleController {
   async roleMenu(@Body() roleMenuDto: RoleMenuDto) {
     const data = await this.roleService.roleMenu(roleMenuDto);
     return Result.success(data, '角色关联菜单成功');
+  }
+
+  @ApiOperation({ summary: '角色下的用户' })
+  @ApiBearerAuth()
+  @Get('/user')
+  @Auth()
+  async roleUser(@Query() findRoleUserDto: FindRoleUserDto) {
+    const data = await this.roleService.roleUser(findRoleUserDto);
+    return Result.success(data, '获取角色下的用户成功');
+  }
+
+  @ApiOperation({ summary: '角色添加用户' })
+  @ApiBearerAuth()
+  @Post('/addUser')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  @OpLog('角色添加用户')
+  async addUser(@Body() addUserDto: AddUserDto) {
+    const data = await this.roleService.addUser(addUserDto);
+    return Result.success(data, '角色添加用户成功');
+  }
+
+  @ApiOperation({ summary: '角色关联的菜单' })
+  @ApiBearerAuth()
+  @Get('/menu/get')
+  @Auth()
+  async roleMenuList(@Query('id', generateParseIntPipe('id')) id: number) {
+    const data = await this.roleService.roleMenuList(id);
+    return Result.success(data, '获取角色关联的菜单成功');
   }
 }

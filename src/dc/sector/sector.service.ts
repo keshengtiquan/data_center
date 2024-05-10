@@ -1,12 +1,13 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { CreateSectorDto } from './dto/create-sector.dto';
 import { UpdateSectorDto } from './dto/update-sector.dto';
-import { FindSectorListDto } from './dto/find-Sector-list.dto';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ClsService } from 'nestjs-cls';
 import { FindSectorListListDto } from './dto/find-sector-list-list.dto';
 import Decimal from 'decimal.js';
+import { WorkPlaceService } from '../work-place/workPlace.service';
+import { FindSectorListDto } from './dto/find-sector-list.dto';
 
 @Injectable()
 export class SectorService {
@@ -14,6 +15,8 @@ export class SectorService {
   private prisma: PrismaService;
   @Inject(ClsService)
   private readonly cls: ClsService;
+  @Inject(WorkPlaceService)
+  private readonly workPlaceService: WorkPlaceService;
 
   /**
    * 创建区段划分
@@ -59,8 +62,8 @@ export class SectorService {
       include: {
         Dept: true,
       },
-      skip: (current - 1) * pageSize,
-      take: pageSize,
+      skip: current && (current - 1) * pageSize,
+      take: pageSize && pageSize,
     });
     // 转换工点
     const workPlaceIds = new Set<number>();
@@ -88,7 +91,7 @@ export class SectorService {
           outputValue,
           workPlaceNames: workPlaces.map((item) => {
             const workPlace = workPlaceList.find((workPlace) => workPlace.id === item);
-            return workPlace.workPlaceName;
+            return workPlace?.workPlaceName || '';
           }),
         };
         return obj;
@@ -231,5 +234,57 @@ export class SectorService {
       return obj;
     });
     return results;
+  }
+
+  /**
+   * 获取图表数据
+   * @returns
+   */
+  async getSectorChart() {
+    const workPlaceData = await this.workPlaceService.findAllPaginationFree({ workPlaceType: 'station' });
+    const sectorData = await this.findAll({});
+    console.log(sectorData.results);
+    const workplace = [];
+    const links = [];
+    for (let i = 0; i < workPlaceData.length; i++) {
+      const sectors = sectorData.results.filter((sector) => {
+        const workplaceIds = JSON.parse(sector.workPlaces);
+        return workplaceIds.includes(workPlaceData[i].id);
+      });
+      workplace.push({
+        id: workPlaceData[i].id,
+        x: workPlaceData[i].x,
+        y: workPlaceData[i].y,
+        name: workPlaceData[i].workPlaceName,
+        order:
+          sectors.length > 0
+            ? sectors.map((item) => {
+                return item.Dept.deptName;
+              })
+            : [],
+      });
+      if (i !== workPlaceData.length - 1) {
+        const sectors = sectorData.results.filter((sector) => {
+          return sector.workPlaceNames.includes(
+            `${workPlaceData[i].workPlaceName}-${workPlaceData[i + 1].workPlaceName}`,
+          );
+        });
+        links.push({
+          source: workPlaceData[i].workPlaceName,
+          target: workPlaceData[i + 1].workPlaceName,
+          order:
+            sectors.length > 0
+              ? sectors.map((item) => {
+                  return item.Dept.deptName;
+                })
+              : [],
+        });
+      }
+    }
+
+    return {
+      workplace,
+      links,
+    };
   }
 }

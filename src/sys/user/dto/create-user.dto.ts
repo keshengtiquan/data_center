@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
-import { IsNotEmpty, IsOptional } from 'class-validator';
+import { Transform, Type, plainToClass } from 'class-transformer';
+import { IsNotEmpty, IsOptional, ValidationError, validate } from 'class-validator';
 import { IsNotExistsRule } from 'src/common/rules/is-not-exist.rule';
 import { md5 } from 'src/utils/md5';
 
@@ -49,4 +49,17 @@ export class CreateUserDto {
   @Type(() => Number)
   @IsOptional()
   defaultProjectId: number;
+
+  async validate(): Promise<{ valided: boolean; errors?: ValidationError[]; createDto?: CreateUserDto}> {
+    const transformedUser = plainToClass(CreateUserDto, this);
+    
+    // 手动执行 DTO 校验
+    const errors = await validate(transformedUser);
+    
+    if (errors.length > 0) {
+      return { valided: false, errors };
+    } else {
+      return { valided: true,  createDto: transformedUser};
+    }
+  }
 }

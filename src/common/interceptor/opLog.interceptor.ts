@@ -67,8 +67,6 @@ export class OpLogInterceptor implements NestInterceptor {
         this.createLogAsync(createLog);
       }),
       catchError((error) => {
-        console.log(error);
-        
         const res = error.getResponse() as { message: string[] };
         createLog.category = 'exception'
         createLog.exeMessage = res?.message?.join ? res?.message?.join(',') : error.message;

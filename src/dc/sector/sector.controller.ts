@@ -91,4 +91,13 @@ export class SectorController {
     const data = await this.sectorService.getSectorList(findSectorList);
     return Result.success(data);
   }
+
+  @ApiOperation({ summary: '区段划分图'})
+  @ApiBearerAuth()
+  @Get('/sector/chart')
+  @Auth()
+  async getSectorChart(){
+    const data = await this.sectorService.getSectorChart();
+    return Result.success(data);
+  }
 }

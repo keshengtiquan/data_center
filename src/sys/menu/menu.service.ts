@@ -7,6 +7,7 @@ import { User } from '@prisma/client';
 import { handleTree } from 'src/utils/tree';
 import { ForbiddenMenuDto } from './dto/forbidden-menu.dto';
 import { Memu_Module, USER_TYPE } from 'src/common/enum';
+import { isNumber } from 'class-validator';
 
 @Injectable()
 export class MenuService {
@@ -55,31 +56,66 @@ export class MenuService {
       module: module,
       deleteflag: 0,
     };
+
     // 项目管理员访问项目套餐呢的所有菜单
     if (userInfo.userType === USER_TYPE.PROJECT_ADMIN) {
       const tenantPackage = await this.prisma.tenant.findUnique({
         where: {
-          id:
-            +headers.headers['x-tenant-id'] ||
-            userInfo.defaultProjectId ||
-            userInfo.tenants[0].tenantId,
+          id: +headers.headers['x-tenant-id'] || userInfo.defaultProjectId || userInfo.tenants[0].tenantId,
         },
         include: { tenantPackage: true },
       });
       condition.id = {
-        in: tenantPackage.tenantPackage.menuIds.split(',').map((item) => +item),
+        in: tenantPackage.tenantPackage.menuIds
+          .split(',')
+          .map((item) => +item)
+          .filter((item) => isNumber(item)),
       };
       condition.module = Memu_Module.PROJECT;
     }
-    // if (userInfo.userType === USER_TYPE.GENERAL_USER) {
+    if (userInfo.userType === USER_TYPE.GENERAL_USER) {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id: userInfo.id,
+        },
+        include: {
+          roles: true,
+        },
+      });
+      const roleIds = user.roles.map((item) => item.roleId);
+      const roleMenu = await this.prisma.menusOnRoles.findMany({
+        where: {
+          roleId: {
+            in: roleIds,
+          },
+        },
+      });
+      const menuIds = roleMenu.map((item) => item.menuId);
+      console.log(menuIds);
+      const tenantPackage = await this.prisma.tenant.findUnique({
+        where: {
+          id: +headers.headers['x-tenant-id'] || userInfo.defaultProjectId || userInfo.tenants[0].tenantId,
+        },
+        include: { tenantPackage: true },
+      });
+      const tenantPackageMenuIds = tenantPackage.tenantPackage.menuIds
+        .split(',')
+        .map((item) => +item)
+        .filter((item) => isNumber(item));
+      condition.id = {
+        in: menuIds.filter(item => tenantPackageMenuIds.includes(item)),
+      };
+      condition.module = Memu_Module.PROJECT;
+    }
+    console.log(condition);
 
-    // }
     const menu = await this.prisma.menu.findMany({
       where: condition,
       orderBy: {
         menuSort: 'asc',
       },
     });
+
     return handleTree(menu);
   }
 
@@ -89,11 +125,7 @@ export class MenuService {
    */
   async update(updateMenuDto: UpdateMenuDto) {
     const menus = await this.prisma.menu.findMany();
-    updateMenuDto['activeMenu'] = this.getParentIds(
-      updateMenuDto.path,
-      'path',
-      menus,
-    );
+    updateMenuDto['activeMenu'] = this.getParentIds(updateMenuDto.path, 'path', menus);
     const { id, ...other } = updateMenuDto;
     try {
       return await this.prisma.menu.update({
@@ -160,5 +192,22 @@ export class MenuService {
     }
 
     return JSON.stringify(parentPaths.reverse());
+  }
+
+  /**
+   * 获取快捷菜单
+   * @param module
+   */
+  async getShortcutMenu(module: string) {
+    const list = await this.prisma.menu.findMany({
+      where: {
+        deleteflag: 0,
+        status: '0',
+        module: module,
+        menuType: { in: ['M', 'C'] },
+      },
+    });
+
+    return handleTree(list);
   }
 }

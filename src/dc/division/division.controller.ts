@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, UseInterceptors, Header, Res, UploadedFile } from '@nestjs/common';
 import { DivisionService } from './division.service';
 import { CreateDivisionDto } from './dto/create-division.dto';
 import { UpdateDivisionDto } from './dto/update-division.dto';
@@ -12,6 +12,11 @@ import { FindDivisionListDto } from './dto/find-division-list.dto';
 import { AddListDto } from './dto/add-list-dto';
 import { OutputValueInterceptor } from 'src/common/interceptor/outputValue.interceptor';
 import { OpLog } from 'src/common/decorators/recordLog.dectorator';
+import { Response } from 'express';
+import * as path from 'path';
+import * as fs from 'fs';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileNameEncodePipe } from 'src/common/pipe/fileNameEncodePipe';
 
 @ApiTags('分部分项管理')
 @Controller('division')
@@ -102,5 +107,36 @@ export class DivisionController {
   async batchDeleteDivisionList(@Body('ids') ids: number[]){
     const data = await this.divisionService.batchDeleteDivisionList(ids);
     return Result.success(data, '删除清单成功');
+  }
+
+  @ApiOperation({ summary: '导出模版' })
+  @ApiBearerAuth()
+  @Auth()
+  @Post('/export/template')
+  @HttpCode(HttpStatus.OK)
+  @Header('Content-Type', 'application/octet-stream')
+  @Header('Content-Disposition', 'attachment')
+  async exportUserTemplate(@Res() res: Response) {
+    const fileName = await this.divisionService.exportDivisionTemplate();
+
+    const filePath = path.join(process.cwd(), fileName);
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.on('end', () => {
+      // Optional: Delete the file after sending
+      fs.unlinkSync(filePath);
+    });
+    return fileStream.pipe(res);
+  }
+
+  @ApiOperation({ summary: '导入分部分项' })
+  @ApiBearerAuth()
+  @Post('/import')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  @OpLog('导入分部分项')
+  @UseInterceptors(FileInterceptor('file'))
+  async importDivision(@UploadedFile(new FileNameEncodePipe()) file: Express.Multer.File) {
+    const data = await this.divisionService.importDivision(file);
+    return Result.success(data, '导入分部分项成功');
   }
 }

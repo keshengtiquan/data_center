@@ -25,7 +25,6 @@ export class LogService {
       skip: (current - 1) * pageSize,
       orderBy: { opTime: 'desc' },
     });
-    console.log(list[0].id);
     
     return {
       results: list,

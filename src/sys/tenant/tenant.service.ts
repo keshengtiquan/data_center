@@ -14,6 +14,7 @@ import { AddTenantUserDto } from './dto/add-tenant-user.dto';
 import { DeleteTenantUserDto } from './dto/delete-tenant-user.dto';
 import { excludeFun } from 'src/utils/prisma';
 import { ListVo } from 'src/common/vo/list.vo';
+import { MinioService } from 'src/minio/minio.service';
 
 @Injectable()
 export class TenantService {
@@ -21,6 +22,8 @@ export class TenantService {
   private readonly prisma: PrismaService;
   @Inject(ClsService)
   private readonly cls: ClsService;
+  @Inject(MinioService)
+  private readonly minioService: MinioService;
 
   /**
    * 创建项目
@@ -332,14 +335,20 @@ export class TenantService {
       where: { tenantId: tenantId, user: { deleteflag: 0 } },
       include: {
         user: {
-          include: { CompanyDept: { where: { deleteflag: 0 } } },
+          include: { CompanyDept: { where: { deleteflag: 0 } }, roles: { include: { role: true } } },
         },
       },
       skip: (current - 1) * pageSize,
       take: pageSize,
     });
+
     return {
-      results: list.map((item) => excludeFun(item.user, ['password'])),
+      results: list.map((item) => excludeFun(item.user, ['password'])).map(item => {
+        return {
+          ...item,
+          roleName: item.roles.map(role => role.role.roleName).join('、'),
+        }
+      }),
       current,
       pageSize,
       total: await this.prisma.tenantsOnUsers.count({
@@ -386,6 +395,10 @@ export class TenantService {
    * @param deleteTenantUserDto
    */
   async deleteTenantUser(deleteTenantUserDto: DeleteTenantUserDto) {
+    const userInfo = this.cls.get('headers').user as User;
+    if (userInfo.id === deleteTenantUserDto.userId) {
+      throw new BadRequestException('请不要删除自己！');
+    }
     await this.prisma.tenantsOnUsers.delete({
       where: {
         userId_tenantId: {
@@ -398,5 +411,25 @@ export class TenantService {
       where: { id: deleteTenantUserDto.userId },
       data: { defaultProjectId: null },
     });
+  }
+
+  /**
+   * 上传合同
+   * @param tenantId
+   * @param fileUrl
+   */
+  async uploadContract(tenantId: number, fileUrl: string, fileName: string) {
+    return await this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: { contractUrl: fileUrl, contract: fileName },
+    });
+  }
+
+  /**
+   * 获取预览地址
+   * @param fileName
+   */
+  async getContractPreview(fileName: string) {
+    return await this.minioService.getPrivatPreviewUrl(fileName);
   }
 }

@@ -3,5 +3,5 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 export class FindSectorListDto extends PaginationDto {
   @IsOptional()
-  sectorName: string;
+  sectorName?: string;
 }

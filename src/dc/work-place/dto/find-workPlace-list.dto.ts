@@ -3,8 +3,8 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 export class FindWorkPlaceListDto extends PaginationDto {
   @IsOptional()
-  workPlaceName: string;
+  workPlaceName?: string;
 
   @IsOptional()
-  workPlaceType: string;
+  workPlaceType?: string;
 }

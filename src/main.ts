@@ -30,4 +30,6 @@ async function bootstrap() {
   SwaggerModule.setup('api-doc', app, document);
   await app.listen(configService.get('nest_server_port'));
 }
-bootstrap();
+bootstrap().then(() => {
+  console.log(`服务已启动，监听端口：${process.env.nest_server_port}`);
+});

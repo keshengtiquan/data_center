@@ -119,4 +119,22 @@ export class CompanyDeptService {
       },
     });
   }
+
+  /**
+   * 根据机构名称查询机构ID
+   * @returns {id: number, deptName: string}
+   */
+  async getCompanyDeptId(deptName: string[]) {
+    const list = await this.prisma.companyDept.findMany({
+      where: {
+        deptName: { in: deptName },
+        deleteflag: 0,
+      },
+      select: {
+        id: true,
+        deptName: true,
+      }
+    });
+    return list
+  }
 }

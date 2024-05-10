@@ -12,13 +12,7 @@ import {
 } from '@nestjs/common';
 import { TenantService } from './tenant.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Auth } from '../auth/decorators/auth.decorators';
 import { Result } from 'src/common/result';
 import { FindTenantListDto } from './dto/find-tenant-list.dto';
@@ -47,10 +41,7 @@ export class TenantController {
   @HttpCode(HttpStatus.OK)
   @OpLog('创建项目')
   async create(@Body() createTenantDto: CreateTenantDto) {
-    return Result.success(
-      await this.tenantService.create(createTenantDto),
-      '创建成功',
-    );
+    return Result.success(await this.tenantService.create(createTenantDto), '创建成功');
   }
 
   @ApiOperation({ summary: '获取项目列表' })
@@ -83,10 +74,7 @@ export class TenantController {
   @OpLog('禁用/启用项目')
   async forbiddenTenant(@Body() forbiddenTenantDto: ForbiddenTenantDto) {
     const data = await this.tenantService.forbidden(forbiddenTenantDto);
-    return Result.success(
-      data,
-      forbiddenTenantDto.status === '1' ? '禁用成功' : '启用成功',
-    );
+    return Result.success(data, forbiddenTenantDto.status === '1' ? '禁用成功' : '启用成功');
   }
 
   @ApiOperation({ summary: '获取项目详情' })
@@ -129,9 +117,7 @@ export class TenantController {
   @Post('/save/tenantInfo')
   @Auth()
   @HttpCode(HttpStatus.OK)
-  @UsePipes(
-    new UserNameToIdPipe(['manager', 'chiefEngineer', 'safetyDirector']),
-  )
+  @UsePipes(new UserNameToIdPipe(['manager', 'chiefEngineer', 'safetyDirector']))
   @OpLog('保存项目信息')
   async saveTenantInfo(@Body() saveTenantInfoDto: SaveTenantInfoDto) {
     const data = await this.tenantService.saveTenantInfo(saveTenantInfoDto);
@@ -143,10 +129,7 @@ export class TenantController {
   @ApiQuery({ name: 'tenantId', type: 'number', required: true })
   @Get('/get/tenantInfo')
   @Auth()
-  async getTenantInfo(
-    @Query('tenantId') tenantId: number,
-    @Headers('x-tenant-id') headerId,
-  ) {
+  async getTenantInfo(@Query('tenantId') tenantId: number, @Headers('x-tenant-id') headerId) {
     const data = await this.tenantService.getTenantInfo(tenantId || +headerId);
     return Result.success(data, '获取项目信息成功');
   }
@@ -157,10 +140,7 @@ export class TenantController {
   @Get('/get/tenantUser')
   @UseInterceptors(UtcToLocalInterceptor)
   @Auth()
-  async getTenantUser(
-    @Query() findTenantUserDto: FindTenantUserDto,
-    @Headers('x-tenant-id') headerId,
-  ) {
+  async getTenantUser(@Query() findTenantUserDto: FindTenantUserDto, @Headers('x-tenant-id') headerId) {
     if (headerId) {
       findTenantUserDto.tenantId = +headerId;
     }
@@ -191,5 +171,26 @@ export class TenantController {
   async deleteTenantUser(@Body() deleteTenantUserDto: DeleteTenantUserDto) {
     const data = await this.tenantService.deleteTenantUser(deleteTenantUserDto);
     return Result.success(data, '删除项目用户成功');
+  }
+
+  @ApiOperation({ summary: '上传合同' })
+  @ApiBearerAuth()
+  @Post('/upload/contract')
+  @HttpCode(HttpStatus.OK)
+  // @OpLog('上传合同')
+  async uploadContract(
+    @Body('tenantId') tenantId: number,
+    @Body('fileUrl') fileUrl: string,
+    @Body('fileName') fileName: string,
+  ) {
+    const data = await this.tenantService.uploadContract(tenantId, fileUrl, fileName);
+    return Result.success(data, '上传合同成功');
+  }
+
+  @ApiOperation({ summary: '获取合同预览地址' })
+  @ApiBearerAuth()
+  @Get('/contract/preview')
+  async getContractPreview(@Query('fileName') fileName: string) {
+    return await this.tenantService.getContractPreview(fileName);
   }
 }

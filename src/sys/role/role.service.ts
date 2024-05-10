@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -12,6 +6,8 @@ import { ClsService } from 'nestjs-cls';
 import { FindRoleListDto } from './dto/find-role-list.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { RoleMenuDto } from './dto/role-menu.dto';
+import { AddUserDto } from './dto/add-user.dto';
+import { FindRoleUserDto } from './dto/find-role-user.dto';
 
 @Injectable()
 export class RoleService {
@@ -165,8 +161,81 @@ export class RoleService {
           data: createDate,
         });
       });
-    } catch (error) {
-      
-    }
+    } catch (error) {}
+  }
+
+  /**
+   * 查询角色下的用户
+   * @param id
+   */
+  async roleUser(findRoleUserDto: FindRoleUserDto) {
+    const { current, pageSize, roleId } = findRoleUserDto;
+    const role = await this.prisma.role.findUnique({
+      where: { id: roleId },
+      include: {
+        users: true,
+      },
+    });
+    const userIds = role.users.map((item) => {
+      return item.userId;
+    });
+    const condition = {
+      id: { in: userIds },
+      deleteflag: 0,
+      status: '0',
+    };
+    const list = await this.prisma.user.findMany({
+      where: condition,
+      skip: (current - 1) * pageSize,
+      take: pageSize,
+    });
+
+    return {
+      results: list,
+      current,
+      pageSize,
+      total: await this.prisma.user.count({ where: condition }),
+    };
+  }
+
+  /**
+   * 角色添加用户
+   * @param addUserDto
+   */
+  async addUser(addUserDto: AddUserDto) {
+    const { roleId } = addUserDto;
+    const role = await this.prisma.role.findUnique({
+      where: { id: roleId },
+      include: {
+        users: true,
+      },
+    });
+    const users = role.users.map((item) => {
+      return item.userId;
+    });
+    const userIds = addUserDto.userIds.filter((item) => !users.includes(item));
+
+    return await this.prisma.usersOnRoles.createMany({
+      data: userIds.map((item) => {
+        return {
+          roleId: roleId,
+          userId: item,
+        };
+      }),
+    });
+  }
+
+  /**
+   * 查询角色关联的菜单
+   * @param id
+   */
+  async roleMenuList(id: number) {
+    const menuRole = await this.prisma.menusOnRoles.findMany({
+      where: { roleId: id },
+    });
+    const menuIds = menuRole.map((item) => {
+      return item.menuId;
+    });
+    return menuIds;
   }
 }

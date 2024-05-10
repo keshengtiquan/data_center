@@ -8,6 +8,7 @@ export type HeaderDataType = {
   width: number;
   key: string;
   header: string;
+  col: string;
 };
 export type SelectType = {
   column: string;
@@ -24,7 +25,7 @@ export class ExcelService {
   /**
    * 解析表
    */
-  async parseExcel(file: any, sheetName: string, skipRows: number) {
+  async parseExcel(file: any, sheetName: string, skipRows: number, tableHeaders?: HeaderDataType[]) {
     const workbook = new Exceljs.Workbook();
     await workbook.xlsx.load(file.buffer);
     const worksheetNames = [];
@@ -42,7 +43,10 @@ export class ExcelService {
       }
       const rowData = { rowNumber: rowNumber };
       row.eachCell({ includeEmpty: true }, (cell: any, col) => {
-        const key = this.columnIndexToColumnLetter(col);
+        let key = this.columnIndexToColumnLetter(col);
+        if (tableHeaders) {
+          key = tableHeaders.find((item) => item.col === key)?.key;
+        }
         switch (cell.type) {
           case 8:
             const value = [];
@@ -65,19 +69,86 @@ export class ExcelService {
   }
 
   /**
+   * 导出数据
+   */
+  async exportExcelFile(options: {
+    sheetName: string;
+    tableHeader: HeaderDataType[];
+    tableData: any[];
+    customStyle?: any;
+  }) {
+    const userInfo = this.cls.get('headers').user as User;
+    const { sheetName, tableHeader, tableData, customStyle } = options;
+    // 创建工作簿
+    const workbook = new Exceljs.Workbook();
+    workbook.creator = userInfo.nickName;
+    workbook.created = new Date();
+    // 添加工作表
+    const worksheet = workbook.addWorksheet(sheetName);
+    // 添加表头
+    worksheet.columns = tableHeader;
+    // 设置表头样式
+    const headerRow = worksheet.getRow(1);
+    headerRow.eachCell((cell) => {
+      cell.style = {
+        font: blackFontStyle,
+        alignment: middleAlignmentStyle,
+        border: blackBorderStyle,
+      };
+      if (cell.text.includes('*')) {
+        cell.style.font = redFontStyle;
+      }
+    });
+    // 添加数据
+    if (tableData && tableData.length > 0) {
+      const data = [];
+      tableData.forEach((table) => {
+        const obj = {};
+        tableHeader.forEach((header) => {
+          obj[header.key] = table[header.key];
+        });
+        data.push(obj);
+      });
+      // 添加行
+      if (data) worksheet.addRows(data);
+      worksheet.columns.forEach((column, index) => {
+        // customStyle.forEach((item) => {
+        //   if (item.columnIndex === index) {
+        //     column.style = item.style;
+        //   }
+        // });
+        const aa = customStyle.find((item) => item.columnIndex === index);
+        if (aa) {
+          column.alignment = aa.alignment as Partial<Exceljs.Alignment>;
+        } else {
+          column.alignment = middleAlignmentStyle;
+        }
+      });
+    }
+    const dataTime = new Date().getTime();
+    await workbook.xlsx.writeFile(`export-${dataTime}.xlsx`);
+    return `export-${dataTime}.xlsx`;
+  }
+
+  /**
    * 导出模版
    * @param options
    * @returns
    */
-  async exportTableHeader(options: { tableHeader: HeaderDataType[]; fillInstructions: string; select: SelectType[] }) {
-    const { tableHeader, fillInstructions, select } = options;
+  async exportTableHeader(options: {
+    tableHeader: HeaderDataType[];
+    sheetName?: string;
+    fillInstructions?: string;
+    select?: SelectType[];
+  }) {
+    const { tableHeader, fillInstructions, select, sheetName } = options;
     const userInfo = this.cls.get('headers').user as User;
     // 创建工作簿
     const workbook = new Exceljs.Workbook();
     workbook.creator = userInfo.nickName;
     workbook.created = new Date();
     // 添加工作表
-    const worksheet = workbook.addWorksheet('sys_user');
+    const worksheet = workbook.addWorksheet(sheetName || 'Sheet1');
     // 添加表头
     worksheet.columns = tableHeader;
     // 如果有填写说明
@@ -98,8 +169,6 @@ export class ExcelService {
     // 设置下拉框
     if (select && select.length > 0) {
       select.forEach((item) => {
-        console.log(item.formulae);
-
         for (let i = item.start; i <= item.end; i += 1) {
           worksheet.getCell(`${item.column}${i}`).dataValidation = {
             type: 'list',

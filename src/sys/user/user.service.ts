@@ -11,9 +11,14 @@ import { ClsService } from 'nestjs-cls';
 import { CompanyDeptService } from '../company-dept/company-dept.service';
 import { extractSubNodeList } from 'src/utils/tree';
 import { ExcelService } from 'src/excel/excel.service';
+import { ExportUserDto } from './dto/export-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { md5 } from 'src/utils/md5';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class UserService {
+
   @Inject()
   private prisma: PrismaService;
   @Inject(ClsService)
@@ -29,10 +34,9 @@ export class UserService {
     { col: 'C', width: 20, key: 'gender', header: '性别' },
     { col: 'D', width: 20, key: 'companyDeptId', header: '所属机构' },
     { col: 'E', width: 20, key: 'email', header: '邮箱' },
-    { col: 'F', width: 20, key: 'tel', header: '电话' },
+    { col: 'F', width: 20, key: 'phoneNumber', header: '电话' },
     { col: 'G', width: 20, key: 'remark', header: '备注' },
   ];
-
   /**
    * 创建用户
    * @param createUserDto
@@ -70,7 +74,7 @@ export class UserService {
       });
       return excludeFun(user, ['password']);
     } catch (error) {
-      throw new BadRequestException('用户创建失败');
+      throw new BadRequestException(error);
     }
   }
 
@@ -214,24 +218,188 @@ export class UserService {
    * @param file
    */
   async importUserFile(file: Express.Multer.File) {
-    console.log(file);
     // 1. 解析表格，获取所有的行数据
-    const rows = await this.excelService.parseExcel(file, 'sys_user', 3)
-    console.log(rows);
+    const rows = await this.excelService.parseExcel(file, 'sys_user', 3);
     // 2. 遍历每一行数据，创建
+    const createDate = [];
+    const companyDept = new Set(rows.map((item) => item.D));
+    const companyDeptMap = await this.companyDeptService.getCompanyDeptId(Array.from(companyDept));
+    const totalCount = rows.length;
+    let errorCount = 0;
+    const errorDetail = [];
+    let successCount = 0;
+
+    for (const row of rows) {
+      const user = new CreateUserDto();
+      user.userName = row.A;
+      user.nickName = row.B;
+      user.password = '123456';
+      user.email = row.E || null;
+      user.phoneNumber = row.F ? String(row.F) : null;
+      user.gender = row.C === '未知' ? '0' : row.C === '男' ? '1' : '2';
+      user.companyDeptId = companyDeptMap.find((item) => item.deptName === row.D).id || null;
+      user.remark = row.G ? String(row.G) : null;
+
+      const validateData = await user.validate();
+      if (validateData.valided) {
+        createDate.push({ ...validateData.createDto, rowNumber: row.rowNumber });
+      } else {
+        errorCount++;
+        errorDetail.push({
+          index: row.rowNumber,
+          msg: Object.values(validateData.errors[0].constraints).join(','),
+          success: false,
+        });
+      }
+    }
+
+    for (const data of createDate) {
+      const { rowNumber, ...createUserData } = data;
+      try {
+        await this.create(createUserData);
+        successCount++;
+      } catch (error) {
+        errorDetail.push({
+          index: rowNumber,
+          msg: error.message,
+          success: false,
+        });
+        errorCount++;
+      }
+    }
+
+    return {
+      totalCount,
+      errorCount,
+      errorDetail,
+      successCount,
+    };
+  }
+
+  /**
+   * 导出用户
+   * @param exportUserDto
+   */
+  async exportUserList(exportUserDto: ExportUserDto) {
+    const { nickName, userName, current, pageSize, status, ids } = exportUserDto;
+    const condition = {
+      ...(nickName && { nickName: { contains: nickName } }),
+      ...(userName && { userName: { contains: userName } }),
+      ...(status && { status: status }),
+      ...(ids && ids.length > 0 && { id: { in: ids } }),
+      deleteflag: 0,
+    };
+    const sql = {
+      where: condition,
+      ...(pageSize && { take: pageSize }),
+      ...(current && { skip: (current - 1) * pageSize }),
+      select: {
+        userName: true,
+        nickName: true,
+        email: true,
+        phoneNumber: true,
+        gender: true,
+        companyDeptId: true,
+        remark: true,
+      },
+    };
+    const list = await this.prisma.user.findMany(sql);
+    const companyDeptList = await this.prisma.companyDept.findMany({
+      where: { deleteflag: 0 },
+    });
+
+    return await this.excelService.exportExcelFile({
+      sheetName: '用户信息',
+      tableHeader: this.tableHeader,
+      tableData: list.map((user) => {
+        const companyDept = companyDeptList.find((item) => item.id === user.companyDeptId);
+        return {
+          ...user,
+          companyDeptId: companyDept ? companyDept.deptName : null,
+          gender: user.gender === '0' ? '未知' : user.gender === '1' ? '男' : '女',
+        };
+      }),
+    });
   }
 
   /**
    * 导出用户模板
    */
   async exportUserTemplate() {
-
-    const fillInstructions = `填写说明: \n1. 账号：必填，不能重复。 \n2. 密码默认为123456。 \n3. 标*为必填字段`;
+    const fillInstructions = `填写说明: \n1. 账号：必填，不能重复。 \n2. 密码默认为123456。 \n3. 标*为必填字段 \n4. 导入文件时不要删除此说明`;
     const select = [{ column: 'C', start: 3, end: 50, formulae: '"未知,男,女"' }];
     return await this.excelService.exportTableHeader({
       tableHeader: this.tableHeader,
       fillInstructions: fillInstructions,
-      select
+      select,
+      sheetName: '用户信息',
     });
+  }
+
+  /**
+   * 更新用户头像
+   * @param avatar
+   */
+  async updateUserAvatat(avatar: string) {
+    const userInfo = this.cls.get('headers').user as User;
+    return await this.prisma.user.update({
+      where: { id: userInfo.id },
+      data: { avatar },
+    });
+  }
+
+  /**
+   * 更新用户密码
+   * @param password
+   */
+  async updateUserPassword(changePasswordDto: ChangePasswordDto) {
+    const userInfo = this.cls.get('headers').user as User;
+    const { password, newPassword, confirmPassword } = changePasswordDto;
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('两次输入的密码不一致');
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id: userInfo.id },
+    });
+    if (!user) {
+      throw new BadRequestException('用户不存在');
+    }
+    if (md5(password) !== user.password) {
+      throw new BadRequestException('原密码错误');
+    }
+    return await this.prisma.user.update({
+      where: { id: userInfo.id },
+      data: { password: md5(newPassword) },
+    });
+  }
+
+  /**
+   * 查询项目下这用户
+   */
+  async getTenantList(paginationDto: PaginationDto) {
+    const tenantId = +this.cls.get('headers').headers['x-tenant-id'];
+    const {current, pageSize} = paginationDto;
+    const users = await this.prisma.tenantsOnUsers.findMany({
+      where: { tenantId },
+    })
+    const userIds = users.map(item => item.userId);
+    const contains = {
+      id: {
+        in: userIds,
+      },
+      deleteflag: 0,
+      status: '0'
+    }
+    const list = await this.prisma.user.findMany({
+      where: contains,
+      skip: (current - 1) * pageSize,
+      take: pageSize,
+    })
+    return {
+      results: list,
+      current,
+      pageSize,
+      total: await this.prisma.user.count({where: contains}),
+    }
   }
 }

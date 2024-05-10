@@ -7,5 +7,6 @@ import { CompanyDeptModule } from '../company-dept/company-dept.module';
   imports: [CompanyDeptModule],
   controllers: [UserController],
   providers: [UserService],
+  exports: [UserService],
 })
 export class UserModule {}
