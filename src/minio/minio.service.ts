@@ -20,6 +20,12 @@ export class MinioService {
     });
   }
 
+  /**
+   * 获取公共仓库上传密钥
+   * @param fileName 
+   * @param keyStartsWith 
+   * @returns 
+   */
   async getUploadSecretKey(fileName: string, keyStartsWith: string): Promise<any> {
     const bucketName = this.configService.get('minio_bucket_name_public');
     const fileKey = `${keyStartsWith ? keyStartsWith + '/' : ''}${fileName}`;
@@ -34,6 +40,12 @@ export class MinioService {
     return await this.minioClient.presignedPostPolicy(policy);
   }
 
+  /**
+   * 获取私有仓库上传密钥
+   * @param fileName 
+   * @param keyStartsWith 
+   * @returns 
+   */
   async getPrivateUploadSecretKey(fileName: string, keyStartsWith: string) {
     const bucketName = this.configService.get('minio_bucket_name_private');
     const fileKey = `${keyStartsWith ? keyStartsWith + '/' : ''}${fileName ? fileName : ''}`;
@@ -48,15 +60,30 @@ export class MinioService {
     return await this.minioClient.presignedPostPolicy(policy);
   }
 
+  /**
+   * 获取私有仓库链接
+   * @param fileName 
+   * @returns 
+   */
   async getPrivatPreviewUrl(fileName: string) {
     const bucketName = this.configService.get('minio_bucket_name_private');
     const expires = 60 * 10; // 10 minutes
     return await this.minioClient.presignedGetObject(bucketName, fileName, expires);
   }
 
+  /**
+   * 上传文件
+   * @param file 
+   * @returns 
+   */
   async uploadFile(file: Express.Multer.File) {
     const bucketName = this.configService.get('minio_bucket_name_private');
     return await this.minioClient.putObject(bucketName, file.originalname, file.buffer);
+  }
+
+  async officeUpload(fileName: string, file: any){
+    const bucketName = this.configService.get('minio_bucket_name_private');
+    return await this.minioClient.putObject(bucketName, fileName, file);
   }
 
 }

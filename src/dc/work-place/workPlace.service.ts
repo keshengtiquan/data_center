@@ -13,6 +13,7 @@ import { ExcelService, HeaderDataType } from 'src/excel/excel.service';
 import { UpdateWorkPlacePositionDto } from './dto/update-workplace-positon.dto';
 import { ExportWorkPlaceListDto } from './dto/export-workPlace-list.dto';
 import { WorkPlaceType } from 'src/common/enum';
+import { objectDeleteNull } from 'src/utils/data';
 
 @Injectable()
 export class WorkPlaceService {
@@ -556,7 +557,6 @@ export class WorkPlaceService {
   async exportWorkPlaceListCollection(exportWorkPlaceListDto: ExportWorkPlaceListDto) {
     const margeTableHeder = this.collectionTableHeader.map((item) => item.header);
     const list = await this.exportWorkPlaceListCollectionData(exportWorkPlaceListDto);
-    console.log(list);
     const workPlaceList = await this.findAllPaginationFree({});
     workPlaceList.forEach((workPlace) => {
       if (workPlace.workPlaceType === WorkPlaceType.STATION) {
@@ -572,14 +572,14 @@ export class WorkPlaceService {
       } else if (workPlace.workPlaceType === WorkPlaceType.SECTION) {
         this.collectionTableHeader.push({
           col: this.excelService.columnIndexToColumnLetter(this.collectionTableHeader.length + 1),
-          key: workPlace.workPlaceCode,
+          key: workPlace.workPlaceCode + '_left',
           header: workPlace.workPlaceName,
           width: workPlace.workPlaceName.length * 1.3,
         });
         margeTableHeder.push('左线');
         this.collectionTableHeader.push({
           col: this.excelService.columnIndexToColumnLetter(this.collectionTableHeader.length + 1),
-          key: workPlace.workPlaceCode,
+          key: workPlace.workPlaceCode + '_right',
           header: workPlace.workPlaceName,
           width: workPlace.workPlaceName.length * 1.3,
         });
@@ -597,12 +597,30 @@ export class WorkPlaceService {
         },
       },
     ];
-    console.log(this.collectionTableHeader);
     return await this.excelService.exportExcelFile({
       tableHeader: this.collectionTableHeader,
       sheetName: '工点清单列表',
       mergeRowsData: [1],
-      tableData: list,
+      tableData: list.map((item) => {
+        const keys = Object.keys(item);
+        const workPlaceKeys = [];
+        keys.forEach((key) => {
+          if (workPlaceList.map((workPlace) => workPlace.workPlaceCode).includes(key)) {
+            const work = workPlaceList.find((ele) => ele.workPlaceCode === key);
+            workPlaceKeys.push({ key, type: work.workPlaceType });
+          }
+        });
+        workPlaceKeys.forEach((ele) => {
+          if (ele.type === WorkPlaceType.STATION) {
+            item[ele.key] = item[ele.key].allQuantities;
+          } else if (ele.type === WorkPlaceType.SECTION) {
+            item[ele.key + '_left'] = item[ele.key].leftQuantities;
+            item[ele.key + '_right'] = item[ele.key].rightQuantities;
+          }
+        });
+        item.unitPrice = item.unitPrice.toNumber();
+        return item;
+      }),
       mergeColumnsData: {
         rowDatas: [margeTableHeder],
         megerColumnRanges: [[1, 2]],
@@ -610,7 +628,11 @@ export class WorkPlaceService {
       customStyle,
     });
   }
-
+  /**
+   * 导出时查询汇总清单
+   * @param exportWorkPlaceListDto
+   * @returns
+   */
   async exportWorkPlaceListCollectionData(exportWorkPlaceListDto: ExportWorkPlaceListDto) {
     const tenantId = +this.cls.get('headers').headers['x-tenant-id'];
     const { current, pageSize, sectionalEntry } = exportWorkPlaceListDto;
@@ -664,5 +686,156 @@ export class WorkPlaceService {
       results.push(obj);
     });
     return results;
+  }
+
+  /**
+   * 导入汇总清单
+   * @param file
+   */
+  async importWorkPlaceListCollection(file: Express.Multer.File) {
+    const workPlaceList = await this.findAllPaginationFree({});
+    workPlaceList.forEach((workPlace) => {
+      if (workPlace.workPlaceType === WorkPlaceType.STATION) {
+        // { col: 'H', key: 'total', header: '合计', width: 10 },
+        const col = {
+          col: this.excelService.columnIndexToColumnLetter(this.collectionTableHeader.length + 1),
+          key: workPlace.workPlaceCode,
+          header: workPlace.workPlaceName,
+          width: workPlace.workPlaceName.length * 3,
+        };
+        this.collectionTableHeader.push(col);
+      } else if (workPlace.workPlaceType === WorkPlaceType.SECTION) {
+        this.collectionTableHeader.push({
+          col: this.excelService.columnIndexToColumnLetter(this.collectionTableHeader.length + 1),
+          key: workPlace.workPlaceCode + '_left',
+          header: workPlace.workPlaceName,
+          width: workPlace.workPlaceName.length * 1.3,
+        });
+        this.collectionTableHeader.push({
+          col: this.excelService.columnIndexToColumnLetter(this.collectionTableHeader.length + 1),
+          key: workPlace.workPlaceCode + '_right',
+          header: workPlace.workPlaceName,
+          width: workPlace.workPlaceName.length * 1.3,
+        });
+      }
+    });
+    const rows = await this.excelService.parseExcel(file, '工点清单列表', 3, this.collectionTableHeader);
+    let errorCount = 0;
+    const errorDetail = [];
+    let successCount = 0;
+    for (const row of rows) {
+      const filterRow = objectDeleteNull(row);
+      try {
+        await this.execlImportAdd(filterRow);
+        successCount++
+      } catch (error) {
+        errorCount++
+        errorDetail.push({
+          index: row.rowNumber,
+          msg: error,
+          success: false,
+        })
+      }
+    }
+
+    return {
+      totalCount: rows.length,
+      errorCount,
+      errorDetail,
+      successCount,
+    }
+  }
+
+  async execlImportAdd(row: any) {
+    const tenantId = +this.cls.get('headers').headers['x-tenant-id'];
+    const arr = [
+      'rowNumber',
+      'serialNumber',
+      'listCode',
+      'listName',
+      'listCharacteristic',
+      'unit',
+      'unitPrice',
+      'quantities',
+      'total',
+    ];
+    const excelWorkPlaceCode = Object.keys(row).filter((item) => !arr.includes(item));
+    // console.log(excelWorkPlaceCode);
+    const workPlaceCode = excelWorkPlaceCode
+      .map((item) => {
+        if (item.includes('_')) {
+          return item.split('_')[0];
+        } else {
+          return item;
+        }
+      })
+      .filter((value, index, self) => self.indexOf(value) === index);
+    const workPlaceList = await this.prisma.workPlace.findMany({
+      where: {
+        deleteflag: 0,
+        tenantId,
+        workPlaceCode: {
+          in: workPlaceCode,
+        },
+      },
+    });
+    const list = await this.prisma.list.findFirst({
+      where: {
+        listCode: row.listCode,
+        deleteflag: 0,
+        tenantId,
+      },
+    });
+    // console.log(row);
+    for (const code of workPlaceCode) {
+      const obj = { tenantId };
+      const workPlace = workPlaceList.find((item) => item.workPlaceCode === code);
+      if (workPlace.workPlaceType === WorkPlaceType.STATION) {
+        obj['allQuantities'] = row[code];
+      } else if (workPlace.workPlaceType === WorkPlaceType.SECTION) {
+        obj['leftQuantities'] = row[code + '_left'];
+        obj['rightQuantities'] = row[code + '_right'];
+        obj['allQuantities'] = Number(Decimal.add(row[code + '_left'], row[code + '_right']));
+      }
+      obj['workPlaceId'] = workPlace.id;
+      obj['listId'] = list.id;
+
+      await this.workPlaceListAddOrUpdate(obj);
+    }
+  }
+
+  async workPlaceListAddOrUpdate(row: any) {
+    const tenantId = +this.cls.get('headers').headers['x-tenant-id'];
+    const workPlaceList = await this.prisma.workPlaceList.findFirst({
+      where: {
+        workPlaceId: row.workPlaceId,
+        listId: row.listId,
+        tenantId,
+        deleteflag: 0,
+      },
+    });
+    if (workPlaceList) {
+      await this.prisma.workPlaceList.update({
+        where: {
+          id: workPlaceList.id,
+        },
+        data: {
+          allQuantities: row.allQuantities,
+          leftQuantities: row.leftQuantities,
+          rightQuantities: row.rightQuantities,
+        },
+      });
+    } else {
+      await this.prisma.workPlaceList.create({
+        data: {
+          allQuantities: row.allQuantities,
+          leftQuantities: row.leftQuantities,
+          rightQuantities: row.rightQuantities,
+          workPlaceId: row.workPlaceId,
+          listId: row.listId,
+          tenantId,
+        },
+      });
+    }
   }
 }

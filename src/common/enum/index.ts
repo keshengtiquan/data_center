@@ -12,3 +12,10 @@ export enum WorkPlaceType {
   SECTION = 'section',
   STATION = 'station',
 }
+
+// onlyoffice文件类型
+export enum DocumentType {
+  docx = 'word',
+  xlsx = 'cell',
+  pptx = 'slide',
+}

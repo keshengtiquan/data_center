@@ -15,9 +15,11 @@ import { DeleteTenantUserDto } from './dto/delete-tenant-user.dto';
 import { excludeFun } from 'src/utils/prisma';
 import { ListVo } from 'src/common/vo/list.vo';
 import { MinioService } from 'src/minio/minio.service';
+import { UpdateTenantInfoDto } from './dto/update-tenant-info.dto';
 
 @Injectable()
 export class TenantService {
+
   @Inject(PrismaService)
   private readonly prisma: PrismaService;
   @Inject(ClsService)
@@ -431,5 +433,17 @@ export class TenantService {
    */
   async getContractPreview(fileName: string) {
     return await this.minioService.getPrivatPreviewUrl(fileName);
+  }
+
+  /**
+   * 修改项目信息
+   * @param updateTenantInfoDto 
+   */
+  async updateTenantInfo(updateTenantInfoDto: UpdateTenantInfoDto) {
+    const tenantId = +this.cls.get('headers').headers['x-tenant-id'];
+    await this.prisma.tenant.update({
+      where: {id: tenantId},
+      data: {...updateTenantInfoDto}
+    })
   }
 }

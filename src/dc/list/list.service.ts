@@ -38,15 +38,22 @@ export class ListService {
   async create(createListDto: CreateListDto) {
     const userInfo = this.cls.get('headers').user as User;
     const tenantId = +this.cls.get('headers').headers['x-tenant-id'];
+    if (
+      Decimal.mul(createListDto.unitPrice, createListDto.quantities).toDP(2, Decimal.ROUND_HALF_UP).toNumber() !==
+      Number(createListDto.combinedPrice)
+    ) {
+      throw new BadRequestException('单价*乘以工程量*不等于合价*');
+    }
+
     const list = await this.prisma.list.findFirst({
       where: {
         listCode: createListDto.listCode,
         tenantId: tenantId,
-        deleteflag: 0
-      }
-    })
-    if(list) {
-      throw new BadRequestException('清单编码已存在')
+        deleteflag: 0,
+      },
+    });
+    if (list) {
+      throw new BadRequestException('清单编码已存在');
     }
     return this.prisma.$transaction(async (prisma) => {
       const list = await prisma.list.create({
@@ -162,6 +169,12 @@ export class ListService {
    */
   async update(updateListDto: UpdateListDto) {
     const userInfo = this.cls.get('headers').user as User;
+    if (
+      Decimal.mul(updateListDto.unitPrice, updateListDto.quantities).toDP(2, Decimal.ROUND_HALF_UP).toNumber() !==
+      Number(updateListDto.combinedPrice)
+    ) {
+      throw new BadRequestException('单价*乘以工程量*不等于合价*');
+    }
     return await this.prisma.list.update({
       where: { id: updateListDto.id },
       data: {

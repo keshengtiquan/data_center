@@ -29,6 +29,7 @@ import { ExcelModule } from './excel/excel.module';
 import { PublicApiModule } from './sys/public-api/public-api.module';
 import { MinioModule } from './minio/minio.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
+import { OnlyofficeModule } from './onlyoffice/onlyoffice.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { KnowledgeModule } from './knowledge/knowledge.module';
     PublicApiModule,
     MinioModule,
     KnowledgeModule,
+    OnlyofficeModule,
   ],
   controllers: [],
   providers: [

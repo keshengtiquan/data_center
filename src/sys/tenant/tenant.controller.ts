@@ -27,6 +27,7 @@ import { UtcToLocalInterceptor } from 'src/common/interceptor/utc2Local.intercep
 import { UserNameToIdPipe } from 'src/common/pipe/userNameToIdPipe';
 import { DictTransform } from 'src/common/decorators/dict.dectorator';
 import { OpLog } from 'src/common/decorators/recordLog.dectorator';
+import { UpdateTenantInfoDto } from './dto/update-tenant-info.dto';
 
 @ApiTags('项目管理')
 @Controller('tenant')
@@ -192,5 +193,16 @@ export class TenantController {
   @Get('/contract/preview')
   async getContractPreview(@Query('fileName') fileName: string) {
     return await this.tenantService.getContractPreview(fileName);
+  }
+
+  @ApiOperation({ summary: '修改项目信息' })
+  @ApiBearerAuth()
+  @Post('/update/tenantInfo')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  @OpLog('修改项目信息')
+  async updateTenantInfo(@Body() updateTenantInfoDto: UpdateTenantInfoDto) {
+    const data = await this.tenantService.updateTenantInfo(updateTenantInfoDto);
+    return Result.success(data, '修改项目信息成功');
   }
 }

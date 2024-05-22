@@ -277,4 +277,15 @@ export class WorkPlaceController {
     });
     return fileStream.pipe(res);
   }
+
+  @ApiOperation({ summary: '工点清单汇总导入' })
+  @ApiBearerAuth()
+  @Post('/import/workplacelist/collection')
+  @Auth() 
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  async importWorkPlaceListCollection(@UploadedFile(new FileNameEncodePipe()) file: Express.Multer.File) {
+    const res = await this.workPlaceService.importWorkPlaceListCollection(file);
+    return Result.success(res, '导入成功');
+  }
 }

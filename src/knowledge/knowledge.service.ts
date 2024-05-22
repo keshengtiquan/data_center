@@ -130,7 +130,7 @@ export class KnowledgeService {
     if (res.etag) {
       const fileSize = file.size;
       const fileType = extractFileType(file.originalname);
-      const filePath = 'http://' + this.configService.get('minio_api') + '/' + bucketName + '/' + fileName;
+      const filePath = fileName;
       await this.prisma.konwledge.create({
         data: {
           tenantId,
@@ -154,6 +154,7 @@ export class KnowledgeService {
    * @param fileName
    */
   async downloadFile(fileName: string) {
+    
     const bucketName = this.configService.get('minio_bucket_name_private');
     const dataStream = await this.minioClient.getObject(bucketName, fileName);
     return dataStream;

@@ -106,6 +106,7 @@ export class KnowledgeController {
   @ApiBearerAuth()
   @Get('/file/getPreviewUrl')
   @Auth()
+  @Header('Access-Control-Allow-Origin', "*")
   async getPreviewUrl(@Query('filePath') filePath: string) {
     return Result.success(await this.knowledgeService.getPreviewUrl(filePath));
   }

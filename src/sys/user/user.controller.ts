@@ -213,4 +213,13 @@ export class UserController {
     const data = await this.userService.updateUserPassword(changePasswordDto);
     return Result.success(data, '用户密码更新成功');
   }
+
+  @ApiOperation({ summary: '获取用户的项目' })
+  @ApiBearerAuth()
+  @Auth()
+  @Get('/tenants')
+  async getUserTenants() {
+    const data = await this.userService.getUserTenants();
+    return Result.success(data, '获取用户的项目成功');
+  }
 }

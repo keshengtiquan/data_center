@@ -18,7 +18,6 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class UserService {
-
   @Inject()
   private prisma: PrismaService;
   @Inject(ClsService)
@@ -367,7 +366,7 @@ export class UserService {
     if (md5(password) !== user.password) {
       throw new BadRequestException('原密码错误');
     }
-    return await this.prisma.user.update({
+    return await this.prisma.user.update({ 
       where: { id: userInfo.id },
       data: { password: md5(newPassword) },
     });
@@ -378,28 +377,52 @@ export class UserService {
    */
   async getTenantList(paginationDto: PaginationDto) {
     const tenantId = +this.cls.get('headers').headers['x-tenant-id'];
-    const {current, pageSize} = paginationDto;
+    const { current, pageSize } = paginationDto;
     const users = await this.prisma.tenantsOnUsers.findMany({
       where: { tenantId },
-    })
-    const userIds = users.map(item => item.userId);
+    });
+    const userIds = users.map((item) => item.userId);
     const contains = {
       id: {
         in: userIds,
       },
       deleteflag: 0,
-      status: '0'
-    }
+      status: '0',
+    };
     const list = await this.prisma.user.findMany({
       where: contains,
       skip: (current - 1) * pageSize,
       take: pageSize,
-    })
+    });
     return {
       results: list,
       current,
       pageSize,
-      total: await this.prisma.user.count({where: contains}),
+      total: await this.prisma.user.count({ where: contains }),
+    };
+  }
+
+  /**
+   * 查询用户下的项目
+   */
+  async getUserTenants() {
+    const userInfo = this.cls.get('headers').user as User;
+    if (userInfo.userType === USER_TYPE.SYSTEM_USER) {
+      return await this.prisma.tenant.findMany({
+        where: { deleteflag: 0 },
+      });
+    } else {
+      const list = await this.prisma.tenantsOnUsers.findMany({
+        where: {
+          userId: userInfo.id,
+        },
+        include: {
+          tenant: true,
+        },
+      });
+      return list.map(item => {
+        return item.tenant
+      });
     }
   }
 }

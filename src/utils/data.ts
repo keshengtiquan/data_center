@@ -60,3 +60,11 @@ export const getWeekStartAndEnd = (date: Date) => {
     endDate: weekEndDate,
   };
 };
+
+export const objectDeleteNull = (obj: any) => {
+  return Object.fromEntries(
+    Object.entries(obj).filter(
+      ([, value]) => value !== null && value !== undefined && value !== 0 && value !== '',
+    ),
+  );
+}

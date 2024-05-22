@@ -444,14 +444,15 @@ model Task {
 
 model Konwledge {
   id         Int      @id @default(autoincrement())
-  tenantId   Int?     @map("tenant_id") 
-  parentId   Int?     @map("parent_id") @default(0)
+  tenantId   Int?     @map("tenant_id")
+  parentId   Int?     @default(0) @map("parent_id")
   fileName   String   @map("file_name")
-  filePath   String?   @map("file_path")
+  filePath   String?  @map("file_path")
   fileSize   Int?     @map("file_size")
   fileType   String?  @map("file_type")
-  isFolder   Boolean  @map("is_folder") @default(false)
+  isFolder   Boolean  @default(false) @map("is_folder")
   sortNumber Int?     @map("sort_number")
+  key        String?
   createBy   String?  @map("create_by") @db.VarChar(255)
   updateBy   String?  @map("update_by") @db.VarChar(255)
   createTime DateTime @default(now()) @map("create_time")
