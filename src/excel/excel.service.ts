@@ -76,9 +76,11 @@ export class ExcelService {
     tableHeader: HeaderDataType[];
     tableData: any[];
     customStyle?: any;
+    mergeRowsData?: number[]; // 要合并的行号
+    mergeColumnsData?: any;
   }) {
     const userInfo = this.cls.get('headers').user as User;
-    const { sheetName, tableHeader, tableData, customStyle } = options;
+    const { sheetName, tableHeader, tableData, customStyle, mergeRowsData, mergeColumnsData } = options;
     // 创建工作簿
     const workbook = new Exceljs.Workbook();
     workbook.creator = userInfo.nickName;
@@ -87,6 +89,53 @@ export class ExcelService {
     const worksheet = workbook.addWorksheet(sheetName);
     // 添加表头
     worksheet.columns = tableHeader;
+
+    // 合并行重复数据
+    if (mergeRowsData && mergeRowsData.length > 0) {
+      mergeRowsData.forEach((i) => {
+        const row = worksheet.getRow(i).values;
+        const ranges = this.margeRow(row as string[]);
+        // console.log(ranges);
+        ranges.forEach((range) => {
+          worksheet.mergeCells(
+            `${this.columnIndexToColumnLetter(range.start)}1:${this.columnIndexToColumnLetter(range.end)}1`,
+          );
+        });
+      });
+    }
+    // 合并列重复数据
+    if (mergeColumnsData) {
+      worksheet.addRows(mergeColumnsData.rowDatas);
+      const ranges = mergeColumnsData.megerColumnRanges;
+      ranges.forEach((range) => {
+        const excelRows = worksheet.getRows(range[0], range[1]);
+        const rows = [];
+        excelRows.forEach((row) => {
+          const rowData = row.values as Array<string>;
+          // getRows获取的values的数组第一个为<empty>,所以要把ranges的第一个去掉去掉。
+          rowData.shift();
+          rows.push(rowData);
+        });
+
+        const ranges = this.margeColumn(rows);
+        // margeColumn方法返回的start end index都是从0开始的，要加一处理
+        const formatRange = ranges
+          .filter((item) => item.start !== item.end)
+          .map((range) => ({
+            index: (range.index += 1),
+            start: (range.start += 1),
+            end: (range.end += 1),
+          }));
+        formatRange.forEach((range) => {
+          worksheet.mergeCells(
+            `${this.columnIndexToColumnLetter(range.index)}${range.start}:${this.columnIndexToColumnLetter(
+              range.index,
+            )}${range.end}`,
+          );
+        });
+      });
+    }
+
     // 设置表头样式
     const headerRow = worksheet.getRow(1);
     headerRow.eachCell((cell) => {
@@ -112,16 +161,13 @@ export class ExcelService {
       // 添加行
       if (data) worksheet.addRows(data);
       worksheet.columns.forEach((column, index) => {
-        // customStyle.forEach((item) => {
-        //   if (item.columnIndex === index) {
-        //     column.style = item.style;
-        //   }
-        // });
-        const aa = customStyle.find((item) => item.columnIndex === index);
-        if (aa) {
-          column.alignment = aa.alignment as Partial<Exceljs.Alignment>;
-        } else {
-          column.alignment = middleAlignmentStyle;
+        if (customStyle && customStyle.length > 0) {
+          const aa = customStyle.find((item) => item.columnIndex === index);
+          if (aa) {
+            column.alignment = aa.alignment as Partial<Exceljs.Alignment>;
+          } else {
+            column.alignment = middleAlignmentStyle;
+          }
         }
       });
     }
@@ -140,8 +186,10 @@ export class ExcelService {
     sheetName?: string;
     fillInstructions?: string;
     select?: SelectType[];
+    mergeRowsData?: number[]; // 要合并的行号
+    mergeColumnsData?: any;
   }) {
-    const { tableHeader, fillInstructions, select, sheetName } = options;
+    const { tableHeader, fillInstructions, select, sheetName, mergeRowsData, mergeColumnsData } = options;
     const userInfo = this.cls.get('headers').user as User;
     // 创建工作簿
     const workbook = new Exceljs.Workbook();
@@ -149,8 +197,55 @@ export class ExcelService {
     workbook.created = new Date();
     // 添加工作表
     const worksheet = workbook.addWorksheet(sheetName || 'Sheet1');
+
     // 添加表头
     worksheet.columns = tableHeader;
+
+    // 合并行重复数据
+    if (mergeRowsData && mergeRowsData.length > 0) {
+      mergeRowsData.forEach((i) => {
+        const row = worksheet.getRow(i).values;
+        const ranges = this.margeRow(row as string[]);
+        // console.log(ranges);
+        ranges.forEach((range) => {
+          worksheet.mergeCells(
+            `${this.columnIndexToColumnLetter(range.start)}1:${this.columnIndexToColumnLetter(range.end)}1`,
+          );
+        });
+      });
+    }
+    // 合并列重复数据
+    if (mergeColumnsData) {
+      worksheet.addRows(mergeColumnsData.rowDatas);
+      const ranges = mergeColumnsData.megerColumnRanges;
+      ranges.forEach((range) => {
+        const excelRows = worksheet.getRows(range[0], range[1]);
+        const rows = [];
+        excelRows.forEach((row) => {
+          const rowData = row.values as Array<string>;
+          // getRows获取的values的数组第一个为<empty>,所以要把ranges的第一个去掉去掉。
+          rowData.shift();
+          rows.push(rowData);
+        });
+
+        const ranges = this.margeColumn(rows);
+        // margeColumn方法返回的start end index都是从0开始的，要加一处理
+        const formatRange = ranges
+          .filter((item) => item.start !== item.end)
+          .map((range) => ({
+            index: (range.index += 1),
+            start: (range.start += 1),
+            end: (range.end += 1),
+          }));
+        formatRange.forEach((range) => {
+          worksheet.mergeCells(
+            `${this.columnIndexToColumnLetter(range.index)}${range.start}:${this.columnIndexToColumnLetter(
+              range.index,
+            )}${range.end}`,
+          );
+        });
+      });
+    }
     // 如果有填写说明
     if (fillInstructions) {
       worksheet.spliceRows(1, 0, [fillInstructions]);
@@ -193,6 +288,70 @@ export class ExcelService {
     });
     await workbook.xlsx.writeFile('importTemplate.xlsx');
     return 'importTemplate.xlsx';
+  }
+
+  /**
+   * 获取行重复区间
+   * @param row
+   * @returns
+   */
+  margeRow(row: string[]) {
+    const duplicateIndexes = [];
+
+    for (let i = 0; i < row.length - 1; i++) {
+      if (row[i] === row[i + 1]) {
+        const startIndex = i;
+        let endIndex = i + 1;
+        while (row[endIndex] === row[i]) {
+          endIndex++;
+        }
+        duplicateIndexes.push({ start: startIndex, end: endIndex - 1 });
+        i = endIndex - 1;
+      }
+    }
+
+    return duplicateIndexes;
+  }
+
+  margeColumn(arr) {
+    const duplicateRanges = [];
+
+    // 获取内部数组的长度
+    const innerArrayLength = arr[0].length;
+
+    // 遍历内部数组的每个索引位置
+    for (let i = 0; i < innerArrayLength; i++) {
+      let startIndex = null;
+      let endIndex = null;
+      let prevElement = null;
+
+      // 遍历外部数组
+      for (let j = 0; j < arr.length; j++) {
+        const currentElement = arr[j][i];
+        if (prevElement === null) {
+          prevElement = currentElement;
+          startIndex = j;
+        } else if (currentElement !== prevElement) {
+          if (startIndex !== null && (endIndex === null || endIndex - startIndex > 1)) {
+            endIndex = j - 1;
+            duplicateRanges.push({ index: i, start: startIndex, end: endIndex });
+          }
+          startIndex = null;
+          endIndex = null;
+          prevElement = null;
+        }
+      }
+
+      // 处理最后一个元素相同的情况
+      if (startIndex !== null && endIndex === null) {
+        endIndex = arr.length - 1;
+        if (startIndex !== endIndex && endIndex - startIndex > 0) {
+          duplicateRanges.push({ index: i, start: startIndex, end: endIndex });
+        }
+      }
+    }
+
+    return duplicateRanges;
   }
 
   /**

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CreateCompanyDeptDto } from './dto/create-company-dept.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/prisma1/prisma.service';
 import { ClsService } from 'nestjs-cls';
 import { handleTree } from 'src/utils/tree';
 import { FindTreeNodeDto } from './dto/company-dept.dto';

@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTenantDto } from './dto/create-tenant.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/prisma1/prisma.service';
 import { ClsService } from 'nestjs-cls';
 import { User } from '@prisma/client';
 import { md5 } from 'src/utils/md5';

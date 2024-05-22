@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateTenantPackageDto } from './dto/create-tenant-package.dto';
 import { UpdateTenantPackageDto } from './dto/update-tenant-package.dto';
 import { ClsService } from 'nestjs-cls';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/prisma1/prisma.service';
 import { User } from '@prisma/client';
 import { FindPackageListDto } from './dto/find-tenant-package.dto';
 

@@ -164,6 +164,9 @@ export class UserController {
       // Optional: Delete the file after sending
       fs.unlinkSync(filePath);
     });
+    fileStream.on('error', (error) => {
+      return Result.error(error.message);
+    });
     return fileStream.pipe(res);
   }
 
@@ -182,6 +185,9 @@ export class UserController {
     fileStream.on('end', () => {
       // Optional: Delete the file after sending
       fs.unlinkSync(filePath);
+    });
+    fileStream.on('error', (error) => {
+      return Result.error(error.message);
     });
     return fileStream.pipe(res);
   }

@@ -8,3 +8,7 @@ export enum Memu_Module {
   COMPANY = 'company',
   PROJECT = 'project',
 }
+export enum WorkPlaceType {
+  SECTION = 'section',
+  STATION = 'station',
+}

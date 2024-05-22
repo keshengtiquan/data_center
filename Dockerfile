@@ -14,6 +14,7 @@ COPY . .
 
 RUN pnpm run build
 
+
 # production stage
 FROM node:18.20-alpine3.18 as production-stage
 

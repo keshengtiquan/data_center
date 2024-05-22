@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { FindLogListDto } from './dto/find-log-list.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/prisma1/prisma.service';
 import { ClsService } from 'nestjs-cls';
 import * as dayjs from 'dayjs';
 

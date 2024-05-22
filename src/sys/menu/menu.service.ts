@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/prisma1/prisma.service';
 import { ClsService } from 'nestjs-cls';
 import { User } from '@prisma/client';
 import { handleTree } from 'src/utils/tree';
@@ -91,7 +91,6 @@ export class MenuService {
         },
       });
       const menuIds = roleMenu.map((item) => item.menuId);
-      console.log(menuIds);
       const tenantPackage = await this.prisma.tenant.findUnique({
         where: {
           id: +headers.headers['x-tenant-id'] || userInfo.defaultProjectId || userInfo.tenants[0].tenantId,
@@ -107,7 +106,6 @@ export class MenuService {
       };
       condition.module = Memu_Module.PROJECT;
     }
-    console.log(condition);
 
     const menu = await this.prisma.menu.findMany({
       where: condition,

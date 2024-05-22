@@ -1,7 +1,7 @@
 import { CallHandler, ExecutionContext, Inject, Injectable, NestInterceptor } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable, mergeMap } from 'rxjs';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/prisma1/prisma.service';
 import { formatDate } from 'src/utils/data';
 import { getIp } from 'src/utils/ip';
 import { getUserAgent } from 'src/utils/uaParserJs';

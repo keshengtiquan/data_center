@@ -2,7 +2,7 @@ import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { CreateListDto } from './dto/create-list.dto';
 import { UpdateListDto } from './dto/update-list.dto';
 import { User } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/prisma1/prisma.service';
 import { ClsService } from 'nestjs-cls';
 import { FindListListDto } from './dto/find-list-list.dto';
 import { ExcelService, HeaderDataType } from 'src/excel/excel.service';
@@ -38,6 +38,16 @@ export class ListService {
   async create(createListDto: CreateListDto) {
     const userInfo = this.cls.get('headers').user as User;
     const tenantId = +this.cls.get('headers').headers['x-tenant-id'];
+    const list = await this.prisma.list.findFirst({
+      where: {
+        listCode: createListDto.listCode,
+        tenantId: tenantId,
+        deleteflag: 0
+      }
+    })
+    if(list) {
+      throw new BadRequestException('清单编码已存在')
+    }
     return this.prisma.$transaction(async (prisma) => {
       const list = await prisma.list.create({
         data: {

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClsService } from 'nestjs-cls';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/prisma1/prisma.service';
 import { FindListDto } from './dto/find-project-list.dto';
 import { HttpPost } from 'src/common/api';
 import { FindWorkPlaceListDto } from './dto/find-workplace-list.dto';
@@ -146,7 +146,6 @@ export class PublicApiService {
       entry.totalQuantities = totalQuantities;
     });
 
-    console.log(result);
     const list = await this.getProjectList(findListDto);
     list.results = list.results.map((item) => {
       const find = result.find((ele) => ele.listId === item.id);
@@ -162,7 +161,6 @@ export class PublicApiService {
   async getWorkPlaceList(findWorkPlaceListDto: FindWorkPlaceListDto) {
     const tenantId = +this.cls.get('headers').headers['x-tenant-id'];
     const { listId, isPage, current, pageSize } = findWorkPlaceListDto;
-    console.log(isPage);
 
     const condition = {
       deleteflag: 0,

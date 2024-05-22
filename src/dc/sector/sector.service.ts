@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { CreateSectorDto } from './dto/create-sector.dto';
 import { UpdateSectorDto } from './dto/update-sector.dto';
 import { User } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/prisma1/prisma.service';
 import { ClsService } from 'nestjs-cls';
 import { FindSectorListListDto } from './dto/find-sector-list-list.dto';
 import Decimal from 'decimal.js';
@@ -243,7 +243,6 @@ export class SectorService {
   async getSectorChart() {
     const workPlaceData = await this.workPlaceService.findAllPaginationFree({ workPlaceType: 'station' });
     const sectorData = await this.findAll({});
-    console.log(sectorData.results);
     const workplace = [];
     const links = [];
     for (let i = 0; i < workPlaceData.length; i++) {

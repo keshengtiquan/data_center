@@ -125,6 +125,9 @@ export class DivisionController {
       // Optional: Delete the file after sending
       fs.unlinkSync(filePath);
     });
+    fileStream.on('error', (error) => {
+      return Result.error(error.message);
+    });
     return fileStream.pipe(res);
   }
 

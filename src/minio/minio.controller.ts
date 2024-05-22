@@ -18,7 +18,6 @@ export class MinioController {
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@Body() data: any,@UploadedFile(new FileNameEncodePipe()) file: Express.Multer.File) {
-    console.log(data.keyStartsWith);
     return await this.minioService.uploadFile(file)
   }
 

@@ -14,8 +14,6 @@ export class TaskService {
   @Cron(CronExpression.EVERY_DAY_AT_4AM)
   // @Cron(CronExpression.EVERY_10_SECONDS)
   backDataBase() {
-    console.log('备份开始', dayjs(new Date()).format("YYYY-MM-DD HH:mm:ss"));
-    
     mysqldump({
       connection: {
         host: this.configService.get('mysql_server_host'), // 数据库地址
@@ -30,12 +28,10 @@ export class TaskService {
         excludeTables: true
       } 
     }).then(() => {
-      console.log('备份成功', dayjs(new Date()).format("YYYY-MM-DD HH:mm:ss"));
     })
   }
 
   stopCronJob(taskName: string) {
-    console.log('准备停止任务');
     const jobs = this.schedulerRegistry.getCronJobs();
     if (jobs.has(taskName)) {
       const job = this.schedulerRegistry.getCronJob(taskName);
@@ -46,7 +42,6 @@ export class TaskService {
   }
 
   startCronJob(taskName: string) {
-    console.log('准备启动任务');
     const jobs = this.schedulerRegistry.getCronJobs();
     if (jobs.has(taskName)) {
       const job = this.schedulerRegistry.getCronJob(taskName);

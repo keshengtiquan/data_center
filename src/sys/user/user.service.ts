@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/prisma1/prisma.service';
 import { FindListDto } from './dto/find-list.dto';
 import { ForbiddenUserDto } from './dto/forbidden-user.dto';
 import { excludeFun } from 'src/utils/prisma';

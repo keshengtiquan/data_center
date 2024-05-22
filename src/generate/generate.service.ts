@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/prisma1/prisma.service';
 import { CreateGenBasicDto } from './dto/create-generate.dto';
 import { ClsService } from 'nestjs-cls';
 import { GenConfig, User } from '@prisma/client';

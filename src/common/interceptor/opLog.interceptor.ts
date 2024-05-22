@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable, catchError, tap } from 'rxjs';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/prisma1/prisma.service';
 import { getIp } from 'src/utils/ip';
 import { getUserAgent } from 'src/utils/uaParserJs';
 import { formatDate } from 'src/utils/data';

@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, UseInterceptors, Header, Res, UploadedFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  HttpCode,
+  HttpStatus,
+  UseInterceptors,
+  Header,
+  Res,
+  UploadedFile,
+} from '@nestjs/common';
 import { WorkPlaceService } from './workPlace.service';
 import { CreateWorkPlaceDto } from './dto/create-workPlace.dto';
 import { UpdateWorkPlaceDto } from './dto/update-workPlace.dto';
@@ -19,6 +31,7 @@ import * as fs from 'fs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileNameEncodePipe } from 'src/common/pipe/fileNameEncodePipe';
 import { UpdateWorkPlacePositionDto } from './dto/update-workplace-positon.dto';
+import { ExportWorkPlaceListDto } from './dto/export-workPlace-list.dto';
 
 @ApiTags('工点管理')
 @Controller('workPlace')
@@ -176,6 +189,9 @@ export class WorkPlaceController {
       // Optional: Delete the file after sending
       fs.unlinkSync(filePath);
     });
+    fileStream.on('error', (error) => {
+      return Result.error(error.message);
+    });
     return fileStream.pipe(res);
   }
 
@@ -190,7 +206,6 @@ export class WorkPlaceController {
     return Result.success(data, '导入成功');
   }
 
-
   @ApiOperation({ summary: '修改工点位置' })
   @Post('/update/position')
   @ApiBearerAuth()
@@ -200,5 +215,66 @@ export class WorkPlaceController {
   async updatePosition(@Body() updateWorkPlacePositionDto: UpdateWorkPlacePositionDto[]) {
     const data = await this.workPlaceService.updatePosition(updateWorkPlacePositionDto);
     return Result.success(data, '修改成功');
+  }
+
+  @ApiOperation({ summary: '工点清单导入模版' })
+  @ApiBearerAuth()
+  @Post('/import/workplacelist/template')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  @Header('Content-Type', 'application/octet-stream')
+  @Header('Content-Disposition', 'attachment')
+  async importWorkPlaceListTemplate(@Res() res: Response) {
+    const fileName = await this.workPlaceService.exportWorkPlaceListTemplate();
+    const filePath = path.join(process.cwd(), fileName);
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.on('end', () => {
+      // Optional: Delete the file after sending
+      fs.unlinkSync(filePath);
+    });
+    fileStream.on('error', (error) => {
+      return Result.error(error.message);
+    });
+    return fileStream.pipe(res);
+  }
+
+  @ApiOperation({ summary: '工点清单导入' })
+  @ApiBearerAuth()
+  @Post('/import/workplacelist')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  async importWorkPlaceList(
+    @Body('workPlaceId') workPlaceId: number,
+    @UploadedFile(new FileNameEncodePipe()) file: Express.Multer.File,
+  ) {
+    const res = await this.workPlaceService.importWorkPlaceList(file, +workPlaceId);
+    return Result.success(res, '导入成功');
+  }
+
+  @ApiOperation({ summary: '工点清单汇总导出' })
+  @ApiBearerAuth()
+  @Post('/export/workplacelist/collection')
+  @Auth()
+  @HttpCode(HttpStatus.OK)
+  @Header('Content-Type', 'application/octet-stream')
+  @Header('Content-Disposition', 'attachment')
+  async exportWorkPlaceListCollection(
+    @Body() exportWorkPlaceListDto: ExportWorkPlaceListDto,
+    number,
+    @Res() res: Response,
+  ) {
+    const fileName = await this.workPlaceService.exportWorkPlaceListCollection(exportWorkPlaceListDto);
+
+    const filePath = path.join(process.cwd(), fileName);
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.on('end', () => {
+      // Optional: Delete the file after sending
+      fs.unlinkSync(filePath);
+    });
+    fileStream.on('error', (error) => {
+      return Result.error(error.message);
+    });
+    return fileStream.pipe(res);
   }
 }
