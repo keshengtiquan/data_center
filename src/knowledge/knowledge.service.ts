@@ -1,16 +1,16 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma1/prisma.service';
-import { ClsService } from 'nestjs-cls';
-import { CreateFolderDto } from './dto/create-folder.dto';
-import { User } from '@prisma/client';
-import { handleTree } from 'src/utils/tree';
-import { FindFileListDto } from './dto/find-file.dto';
-import { UploadFolderDto } from './dto/upload-folder.dto';
+import {BadRequestException, Inject, Injectable} from '@nestjs/common';
+import {PrismaService} from 'src/prisma1/prisma.service';
+import {ClsService} from 'nestjs-cls';
+import {CreateFolderDto} from './dto/create-folder.dto';
+import {User} from '@prisma/client';
+import {handleTree} from 'src/utils/tree';
+import {FindFileListDto} from './dto/find-file.dto';
+import {UploadFolderDto} from './dto/upload-folder.dto';
 import * as Minio from 'minio';
-import { MINIO_CLIENT } from 'src/minio/minio.module';
-import { ConfigService } from '@nestjs/config';
-import { extractFileType } from 'src/utils/file';
-import { MinioService } from 'src/minio/minio.service';
+import {MINIO_CLIENT} from 'src/minio/minio.module';
+import {ConfigService} from '@nestjs/config';
+import {extractFileType} from 'src/utils/file';
+import {MinioService} from 'src/minio/minio.service';
 
 @Injectable()
 export class KnowledgeService {
@@ -154,6 +154,7 @@ export class KnowledgeService {
    * @param fileName
    */
   async downloadFile(fileName: string) {
+    
     
     const bucketName = this.configService.get('minio_bucket_name_private');
     const dataStream = await this.minioClient.getObject(bucketName, fileName);

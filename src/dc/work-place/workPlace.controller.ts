@@ -1,37 +1,37 @@
 import {
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
-  Query,
+  Header,
   HttpCode,
   HttpStatus,
-  UseInterceptors,
-  Header,
+  Post,
+  Query,
   Res,
   UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { WorkPlaceService } from './workPlace.service';
-import { CreateWorkPlaceDto } from './dto/create-workPlace.dto';
-import { UpdateWorkPlaceDto } from './dto/update-workPlace.dto';
-import { FindWorkPlaceListDto } from './dto/find-workPlace-list.dto';
-import { generateParseIntPipe } from 'src/common/pipe/generateParseIntPipe';
-import { Result } from 'src/common/result';
-import { Auth } from 'src/sys/auth/decorators/auth.decorators';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UtcToLocalInterceptor } from 'src/common/interceptor/utc2Local.interceptor';
-import { DictTransform } from 'src/common/decorators/dict.dectorator';
-import { FindWorkPlaceListListDto } from './dto/find-workPlaceList-list.dto';
-import { SaveWorkPlaceListQuantities } from './dto/save-workPlace-quantity.dto';
-import { OpLog } from 'src/common/decorators/recordLog.dectorator';
-import { FindWorkPlaceListCollectionDto } from './dto/find-workplace-list-collection.dto';
-import { Response } from 'express';
+import {WorkPlaceService} from './workPlace.service';
+import {CreateWorkPlaceDto} from './dto/create-workPlace.dto';
+import {UpdateWorkPlaceDto} from './dto/update-workPlace.dto';
+import {FindWorkPlaceListDto} from './dto/find-workPlace-list.dto';
+import {generateParseIntPipe} from 'src/common/pipe/generateParseIntPipe';
+import {Result} from 'src/common/result';
+import {Auth} from 'src/sys/auth/decorators/auth.decorators';
+import {ApiBearerAuth, ApiOperation, ApiTags} from '@nestjs/swagger';
+import {UtcToLocalInterceptor} from 'src/common/interceptor/utc2Local.interceptor';
+import {DictTransform} from 'src/common/decorators/dict.dectorator';
+import {FindWorkPlaceListListDto} from './dto/find-workPlaceList-list.dto';
+import {SaveWorkPlaceListQuantities} from './dto/save-workPlace-quantity.dto';
+import {OpLog} from 'src/common/decorators/recordLog.dectorator';
+import {FindWorkPlaceListCollectionDto} from './dto/find-workplace-list-collection.dto';
+import {Response} from 'express';
 import * as path from 'path';
 import * as fs from 'fs';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { FileNameEncodePipe } from 'src/common/pipe/fileNameEncodePipe';
-import { UpdateWorkPlacePositionDto } from './dto/update-workplace-positon.dto';
-import { ExportWorkPlaceListDto } from './dto/export-workPlace-list.dto';
+import {FileInterceptor} from '@nestjs/platform-express';
+import {FileNameEncodePipe} from 'src/common/pipe/fileNameEncodePipe';
+import {UpdateWorkPlacePositionDto} from './dto/update-workplace-positon.dto';
+import {ExportWorkPlaceListDto} from './dto/export-workPlace-list.dto';
 
 @ApiTags('工点管理')
 @Controller('workPlace')
@@ -213,6 +213,7 @@ export class WorkPlaceController {
   @HttpCode(HttpStatus.OK)
   @OpLog('修改工点位置')
   async updatePosition(@Body() updateWorkPlacePositionDto: UpdateWorkPlacePositionDto[]) {
+    console.log(updateWorkPlacePositionDto)
     const data = await this.workPlaceService.updatePosition(updateWorkPlacePositionDto);
     return Result.success(data, '修改成功');
   }
@@ -287,5 +288,19 @@ export class WorkPlaceController {
   async importWorkPlaceListCollection(@UploadedFile(new FileNameEncodePipe()) file: Express.Multer.File) {
     const res = await this.workPlaceService.importWorkPlaceListCollection(file);
     return Result.success(res, '导入成功');
+  }
+  
+  @Post('/change/direction')
+  @Auth()
+  async changeLabelDirection(@Body('id')id: number, @Body('direction') direction: string ) {
+    const data = await this.workPlaceService.changeLabelDirection(id, direction)
+    return Result.success(data)
+  }
+  
+  @Post('/change/color')
+  @Auth()
+  async changeColor(@Body('ids')ids: number[], @Body('color')color: string) {
+    const data = await this.workPlaceService.changeColor(ids, color)
+    return Result.success(data)
   }
 }

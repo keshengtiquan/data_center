@@ -1,14 +1,14 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { CreateDivisionDto } from './dto/create-division.dto';
-import { UpdateDivisionDto } from './dto/update-division.dto';
-import { User } from '@prisma/client';
-import { PrismaService } from 'src/prisma1/prisma.service';
-import { ClsService } from 'nestjs-cls';
-import { handleTree } from 'src/utils/tree';
-import { FindDivisionListDto } from './dto/find-division-list.dto';
-import { AddListDto } from './dto/add-list-dto';
+import {BadRequestException, Inject, Injectable} from '@nestjs/common';
+import {CreateDivisionDto} from './dto/create-division.dto';
+import {UpdateDivisionDto} from './dto/update-division.dto';
+import {User} from '@prisma/client';
+import {PrismaService} from 'src/prisma1/prisma.service';
+import {ClsService} from 'nestjs-cls';
+import {handleTree} from 'src/utils/tree';
+import {FindDivisionListDto} from './dto/find-division-list.dto';
+import {AddListDto} from './dto/add-list-dto';
 import Decimal from 'decimal.js';
-import { ExcelService } from 'src/excel/excel.service';
+import {ExcelService} from 'src/excel/excel.service';
 
 @Injectable()
 export class DivisionService {
@@ -129,7 +129,8 @@ export class DivisionService {
 
         // });
         division['outputValue'] = division.lists.reduce((acc, cur) => {
-          return acc + Number(Decimal.mul(cur.quantities, cur.unitPrice));
+          const curValur = Number(Decimal.mul(cur.quantities, cur.unitPrice))
+          return  Number(Decimal.add(acc,curValur ));
         }, 0);
       } else {
         division['outputValue'] = 0;

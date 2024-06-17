@@ -1,9 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { ClsService } from 'nestjs-cls';
-import { PrismaService } from 'src/prisma1/prisma.service';
-import { FindListDto } from './dto/find-project-list.dto';
-import { HttpPost } from 'src/common/api';
-import { FindWorkPlaceListDto } from './dto/find-workplace-list.dto';
+import {Inject, Injectable} from '@nestjs/common';
+import {ClsService} from 'nestjs-cls';
+import {PrismaService} from 'src/prisma1/prisma.service';
+import {FindListDto} from './dto/find-project-list.dto';
+import {HttpPost} from 'src/common/api';
+import {FindWorkPlaceListDto} from './dto/find-workplace-list.dto';
 
 @Injectable()
 export class PublicApiService {
@@ -54,13 +54,17 @@ export class PublicApiService {
 
   async getTeamList() {
     const tenantId = +this.cls.get('headers').headers['x-tenant-id'];
-    return this.prisma.dept.findMany({
+  
+    const list = await this.prisma.dept.findMany({
       where: {
         deleteflag: 0,
         tenantId,
         deptType: 'operation_team',
       },
     });
+ 
+    
+    return list;
   }
 
   async getOperationTeamList(findListDto: FindListDto) {

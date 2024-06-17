@@ -1,10 +1,10 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { CreateDeptDto } from './dto/create-dept.dto';
-import { UpdateDeptDto } from './dto/update-dept.dto';
-import { User } from '@prisma/client';
-import { PrismaService } from 'src/prisma1/prisma.service';
-import { ClsService } from 'nestjs-cls';
-import { handleTree } from 'src/utils/tree';
+import {Inject, Injectable} from '@nestjs/common';
+import {CreateDeptDto} from './dto/create-dept.dto';
+import {UpdateDeptDto} from './dto/update-dept.dto';
+import {User} from '@prisma/client';
+import {PrismaService} from 'src/prisma1/prisma.service';
+import {ClsService} from 'nestjs-cls';
+import {handleTree} from 'src/utils/tree';
 
 @Injectable()
 export class DeptService {
@@ -50,6 +50,9 @@ export class DeptService {
     };
     const list = await this.prisma.dept.findMany({
       where: condition,
+      orderBy: {
+        sortNumber: 'asc'
+      }
     });
 
     // 转换leaderId
@@ -143,5 +146,30 @@ export class DeptService {
         deptType: 'operation_team'
       }
     })
+  }
+  
+  async getOrgData() {
+    const tree = await this.findAll()
+    const obj = this.coverData(tree)
+    
+    return obj[0]
+  }
+  
+  coverData(data: any[])  {
+    const orgData = data.map(item => {
+      const obj: any = {
+        id: item.id,
+        pid: item.parentId,
+        label: item.deptName,
+        noDragging: true,
+        leaderName: item.leaderName,
+        style: {"color":"#fff","background":"#108ffe"},
+      }
+      if (item.children && item.children.length > 0) {
+        obj['children'] = this.coverData(item.children)
+      }
+      return obj
+    })
+    return orgData
   }
 }

@@ -1,19 +1,19 @@
-import { Injectable, Inject, HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
-import { CreateWorkPlaceDto } from './dto/create-workPlace.dto';
-import { UpdateWorkPlaceDto } from './dto/update-workPlace.dto';
-import { FindWorkPlaceListDto } from './dto/find-workPlace-list.dto';
-import { User } from '@prisma/client';
-import { PrismaService } from 'src/prisma1/prisma.service';
-import { ClsService } from 'nestjs-cls';
-import { FindWorkPlaceListListDto } from './dto/find-workPlaceList-list.dto';
+import {BadRequestException, HttpException, HttpStatus, Inject, Injectable} from '@nestjs/common';
+import {CreateWorkPlaceDto} from './dto/create-workPlace.dto';
+import {UpdateWorkPlaceDto} from './dto/update-workPlace.dto';
+import {FindWorkPlaceListDto} from './dto/find-workPlace-list.dto';
+import {User} from '@prisma/client';
+import {PrismaService} from 'src/prisma1/prisma.service';
+import {ClsService} from 'nestjs-cls';
+import {FindWorkPlaceListListDto} from './dto/find-workPlaceList-list.dto';
 import Decimal from 'decimal.js';
-import { SaveWorkPlaceListQuantities } from './dto/save-workPlace-quantity.dto';
-import { FindWorkPlaceListCollectionDto } from './dto/find-workplace-list-collection.dto';
-import { ExcelService, HeaderDataType } from 'src/excel/excel.service';
-import { UpdateWorkPlacePositionDto } from './dto/update-workplace-positon.dto';
-import { ExportWorkPlaceListDto } from './dto/export-workPlace-list.dto';
-import { WorkPlaceType } from 'src/common/enum';
-import { objectDeleteNull } from 'src/utils/data';
+import {SaveWorkPlaceListQuantities} from './dto/save-workPlace-quantity.dto';
+import {FindWorkPlaceListCollectionDto} from './dto/find-workplace-list-collection.dto';
+import {ExcelService, HeaderDataType} from 'src/excel/excel.service';
+import {UpdateWorkPlacePositionDto} from './dto/update-workplace-positon.dto';
+import {ExportWorkPlaceListDto} from './dto/export-workPlace-list.dto';
+import {WorkPlaceType} from 'src/common/enum';
+import {objectDeleteNull} from 'src/utils/data';
 
 @Injectable()
 export class WorkPlaceService {
@@ -280,7 +280,7 @@ export class WorkPlaceService {
       results: list,
       current,
       pageSize,
-      total: 2,
+      total: await this.prisma.list.count({where: condition}),
     };
   }
 
@@ -837,5 +837,29 @@ export class WorkPlaceService {
         },
       });
     }
+  }
+  
+  async changeLabelDirection(id: number, direction: string) {
+    await this.prisma.workPlace.update({
+      where: {
+        id,
+      },
+      data: {
+        labelDirection: direction || 'right'
+      }
+    })
+  }
+  
+  async changeColor(ids: number[], color: string) {
+    await this.prisma.workPlace.updateMany({
+      where: {
+        id: {
+          in: ids
+        },
+      },
+      data: {
+        color
+      }
+    })
   }
 }

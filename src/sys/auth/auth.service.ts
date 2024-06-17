@@ -53,6 +53,14 @@ export class AuthService {
       });
       if (isAllTenantForbidden) throw new BadRequestException('当前用户所属项目已禁用，请联系管理员');
     }
+    if(!user.defaultProjectId && user.userType === USER_TYPE.SYSTEM_USER) {
+      const tenant = await this.prisma.tenant.findFirst({
+        where: {
+          deleteflag: 0
+        }
+      })
+      user.defaultProjectId = tenant.id
+    }
     
     const token = await this.jwtService.signAsync(
       {
@@ -60,6 +68,7 @@ export class AuthService {
         userName: user.userName,
         nickName: user.nickName,
         tenants: user.tenants,
+        deptId: user.deptId,
         defaultProjectId: user.defaultProjectId,
       },
       {
@@ -67,7 +76,7 @@ export class AuthService {
       },
     );
     if (token) {
-      this.redisService.set(`user_${user.id}`, token);
+      await this.redisService.set(`user_${user.id}`, token);
     }
 
     return {

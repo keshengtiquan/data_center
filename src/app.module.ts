@@ -30,6 +30,9 @@ import { PublicApiModule } from './sys/public-api/public-api.module';
 import { MinioModule } from './minio/minio.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { OnlyofficeModule } from './onlyoffice/onlyoffice.module';
+import { GanttModule } from './sc/gantt/gantt.module';
+import { NewSectorModule } from './dc/new-sector/new-sector.module';
+import { ProjectPlanModule } from './dc/project-plan/project-plan.module';
 
 @Module({
   imports: [
@@ -83,6 +86,9 @@ import { OnlyofficeModule } from './onlyoffice/onlyoffice.module';
     MinioModule,
     KnowledgeModule,
     OnlyofficeModule,
+    GanttModule,
+    NewSectorModule,
+    ProjectPlanModule,
   ],
   controllers: [],
   providers: [

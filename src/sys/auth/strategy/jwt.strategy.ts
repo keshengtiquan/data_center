@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../../../prisma1/prisma.service';
+import {USER_TYPE} from "../../../common/enum";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -29,6 +30,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         tenants: true,
       },
     });
+    if(!user.defaultProjectId && user.userType === USER_TYPE.SYSTEM_USER) {
+      const tenant = await this.prisma.tenant.findFirst({
+        where: {
+          deleteflag: 0
+        }
+      })
+      user.defaultProjectId = tenant.id
+    }
 
     delete user.password;
     return user;

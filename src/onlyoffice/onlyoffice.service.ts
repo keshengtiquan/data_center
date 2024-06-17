@@ -1,14 +1,14 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { DocumentInfoDto, OnlyofficeEditorConfig } from './dto/documnet.dto';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { OnlyofficeCallbackDto } from './dto/callback.dto';
-import { HttpService } from '@nestjs/axios';
+import {HttpException, HttpStatus, Inject, Injectable} from '@nestjs/common';
+import {DocumentInfoDto, OnlyofficeEditorConfig} from './dto/documnet.dto';
+import {ConfigService} from '@nestjs/config';
+import {JwtService} from '@nestjs/jwt';
+import {OnlyofficeCallbackDto} from './dto/callback.dto';
+import {HttpService} from '@nestjs/axios';
 import axios from 'axios';
-import { ClsService } from 'nestjs-cls';
-import { DocumentType } from 'src/common/enum';
-import { PrismaService } from 'src/prisma1/prisma.service';
-import { MinioService } from 'src/minio/minio.service';
+import {ClsService} from 'nestjs-cls';
+import {DocumentType} from 'src/common/enum';
+import {PrismaService} from 'src/prisma1/prisma.service';
+import {MinioService} from 'src/minio/minio.service';
 import * as uuid from 'uuid';
 
 @Injectable()
@@ -77,7 +77,7 @@ export class OnlyofficeService {
 
   async callback(body: OnlyofficeCallbackDto) {
     const { url, status, key } = body;
-    console.log(body);
+   
     
     if (status === 2 || status === 3) {
       // 用户关闭了文档  保存有延迟

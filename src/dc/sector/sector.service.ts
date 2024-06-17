@@ -1,13 +1,13 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { CreateSectorDto } from './dto/create-sector.dto';
-import { UpdateSectorDto } from './dto/update-sector.dto';
-import { User } from '@prisma/client';
-import { PrismaService } from 'src/prisma1/prisma.service';
-import { ClsService } from 'nestjs-cls';
-import { FindSectorListListDto } from './dto/find-sector-list-list.dto';
+import {Inject, Injectable} from '@nestjs/common';
+import {CreateSectorDto} from './dto/create-sector.dto';
+import {UpdateSectorDto} from './dto/update-sector.dto';
+import {User} from '@prisma/client';
+import {PrismaService} from 'src/prisma1/prisma.service';
+import {ClsService} from 'nestjs-cls';
+import {FindSectorListListDto} from './dto/find-sector-list-list.dto';
 import Decimal from 'decimal.js';
-import { WorkPlaceService } from '../work-place/workPlace.service';
-import { FindSectorListDto } from './dto/find-sector-list.dto';
+import {WorkPlaceService} from '../work-place/workPlace.service';
+import {FindSectorListDto} from './dto/find-sector-list.dto';
 
 @Injectable()
 export class SectorService {
@@ -255,12 +255,15 @@ export class SectorService {
         x: workPlaceData[i].x,
         y: workPlaceData[i].y,
         name: workPlaceData[i].workPlaceName,
-        order:
-          sectors.length > 0
-            ? sectors.map((item) => {
-                return item.Dept.deptName;
-              })
-            : [],
+        labelDirection: workPlaceData[i].labelDirection,
+        color: workPlaceData[i].color,
+        sortNumber: workPlaceData[i].sortNumber
+        // order:
+        //   sectors.length > 0
+        //     ? sectors.map((item) => {
+        //         return item.Dept.deptName;
+        //       })
+        //     : [],
       });
       if (i !== workPlaceData.length - 1) {
         const sectors = sectorData.results.filter((sector) => {
