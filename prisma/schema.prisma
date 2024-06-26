@@ -534,3 +534,21 @@ model ProjectPlan {
 
   @@map("dc_project_plan")
 }
+
+model MajorQuantity {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int      @map("tenant_id")
+  parentId    Int      @default(0) @map("parent_id")
+  name        String?
+  index       String?
+  unit        String?
+  num         String?
+  calculation String?  @default("sum")
+  createBy    String?  @map("create_by") @db.VarChar(255)
+  updateBy    String?  @map("update_by") @db.VarChar(255)
+  createTime  DateTime @default(now()) @map("create_time")
+  updateTime  DateTime @updatedAt @map("update_time")
+  deleteflag  Int      @default(0) @map("delete_flag")
+
+  @@map("dc_major_quantity")
+}

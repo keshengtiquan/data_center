@@ -33,6 +33,7 @@ import { OnlyofficeModule } from './onlyoffice/onlyoffice.module';
 import { GanttModule } from './sc/gantt/gantt.module';
 import { NewSectorModule } from './dc/new-sector/new-sector.module';
 import { ProjectPlanModule } from './dc/project-plan/project-plan.module';
+import { MajorQuantityModule } from './dc/major-quantity/major-quantity.module';
 
 @Module({
   imports: [
@@ -89,6 +90,7 @@ import { ProjectPlanModule } from './dc/project-plan/project-plan.module';
     GanttModule,
     NewSectorModule,
     ProjectPlanModule,
+    MajorQuantityModule,
   ],
   controllers: [],
   providers: [
